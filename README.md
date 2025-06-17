@@ -87,10 +87,10 @@ venv\Scripts\activate
 
 ---
 
-## 📷 Dashboard Preview
+## 📷 Website Preview
 
-![Predicted vs Actual](outputs/charts/predicted_vs_actual_all_models.png)
-![Model Metrics](outputs/charts/model_comparison_metrics.png)
+![Main Page](static/index.png)
+![Dashboard](static/dashboard.png)
 
 ---
 
