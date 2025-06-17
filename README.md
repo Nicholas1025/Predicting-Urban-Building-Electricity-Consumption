@@ -94,24 +94,6 @@ venv\Scripts\activate
 
 ---
 
-## 🧠 Future Improvements
-
-- Add model comparison (XGBoost vs RandomForest vs SVR)
-- Allow user-uploaded dataset via dashboard
-- Export report (PDF/HTML)
-- Add auto-retraining capability
-
----
-
-## 👨‍💻 Authors
-
-- Nicholas Tay Jun Yang (Team Lead)
-- Loh Jia Xian
-- Tan Zhe Khang
-- Cheeng Huai En
-
----
-
 ## 📜 License
 
 This project is developed for academic and educational purposes under Multimedia University (MMU).
