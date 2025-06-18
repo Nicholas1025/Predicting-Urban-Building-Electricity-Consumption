@@ -90,7 +90,7 @@ Predicting-Urban-Building-Electricity-Consumption/
 ## 📷 Website Preview
 
 ![Main Page](static/index.png)
-![Dashboard](static/dashboard.png)
+![Dashboard](static/dashboardv2.png)
 
 ---
 
