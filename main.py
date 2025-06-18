@@ -111,120 +111,120 @@ def train_xgboost_model():
         print("  ✓ XGBoost model saved")
 
 
-# def train_random_forest_model():
-#     """
-#     Train Random Forest model
-#     """
-#     print("Training Random Forest model...")
+def train_random_forest_model():
+    """
+    Train Random Forest model
+    """
+    print("Training Random Forest model...")
     
-#     try:
-#         # Try to import from existing script
-#         from train_rf import main as train_rf_main
-#         train_rf_main()
-#     except ImportError:
-#         # Fallback: Create Random Forest model inline
-#         print("train_rf.py not found. Training Random Forest model inline...")
+    try:
+        # Try to import from existing script
+        from models.train_rf import main as train_rf_main
+        train_rf_main()
+    except ImportError:
+        # Fallback: Create Random Forest model inline
+        print("train_rf.py not found. Training Random Forest model inline...")
         
-#         from sklearn.ensemble import RandomForestRegressor
-#         from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-#         import joblib
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+        import joblib
         
-#         # Load preprocessed data
-#         X_train = pd.read_csv("outputs/X_train.csv")
-#         X_test = pd.read_csv("outputs/X_test.csv")
-#         y_train = pd.read_csv("outputs/y_train.csv").iloc[:, 0]
-#         y_test = pd.read_csv("outputs/y_test.csv").iloc[:, 0]
+        # Load preprocessed data
+        X_train = pd.read_csv("outputs/X_train.csv")
+        X_test = pd.read_csv("outputs/X_test.csv")
+        y_train = pd.read_csv("outputs/y_train.csv").iloc[:, 0]
+        y_test = pd.read_csv("outputs/y_test.csv").iloc[:, 0]
         
-#         # Create and train model
-#         model = RandomForestRegressor(
-#             n_estimators=100,
-#             max_depth=15,
-#             min_samples_split=5,
-#             min_samples_leaf=2,
-#             random_state=42,
-#             n_jobs=-1
-#         )
+        # Create and train model
+        model = RandomForestRegressor(
+            n_estimators=100,
+            max_depth=15,
+            min_samples_split=5,
+            min_samples_leaf=2,
+            random_state=42,
+            n_jobs=-1
+        )
         
-#         print("  Training Random Forest...")
-#         model.fit(X_train, y_train)
+        print("  Training Random Forest...")
+        model.fit(X_train, y_train)
         
-#         # Make predictions
-#         y_pred = model.predict(X_test)
+        # Make predictions
+        y_pred = model.predict(X_test)
         
-#         # Calculate metrics
-#         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-#         mae = mean_absolute_error(y_test, y_pred)
-#         r2 = r2_score(y_test, y_pred)
+        # Calculate metrics
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
         
-#         print(f"  Random Forest Results: RMSE={rmse:.2f}, MAE={mae:.2f}, R²={r2:.4f}")
+        print(f"  Random Forest Results: RMSE={rmse:.2f}, MAE={mae:.2f}, R²={r2:.4f}")
         
-#         # Save model and predictions
-#         joblib.dump(model, "outputs/model_rf.pkl")
-#         pd.DataFrame({'predictions': y_pred}).to_csv("outputs/predictions_rf.csv", index=False)
+        # Save model and predictions
+        joblib.dump(model, "outputs/model_rf.pkl")
+        pd.DataFrame({'predictions': y_pred}).to_csv("outputs/predictions_rf.csv", index=False)
         
-#         print("  ✓ Random Forest model saved")
+        print("  ✓ Random Forest model saved")
 
 
-# def train_svr_model():
-#     """
-#     Train Support Vector Regression model
-#     """
-#     print("Training SVR model...")
+def train_svr_model():
+    """
+    Train Support Vector Regression model
+    """
+    print("Training SVR model...")
     
-#     try:
-#         # Try to import from existing script
-#         from train_svr import main as train_svr_main
-#         train_svr_main()
-#     except ImportError:
-#         # Fallback: Create SVR model inline
-#         print("train_svr.py not found. Training SVR model inline...")
+    try:
+        # Try to import from existing script
+        from models.train_svr import main as train_svr_main
+        train_svr_main()
+    except ImportError:
+        # Fallback: Create SVR model inline
+        print("train_svr.py not found. Training SVR model inline...")
         
-#         from sklearn.svm import SVR
-#         from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-#         import joblib
+        from sklearn.svm import SVR
+        from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+        import joblib
         
-#         # Load preprocessed data
-#         X_train = pd.read_csv("outputs/X_train.csv")
-#         X_test = pd.read_csv("outputs/X_test.csv")
-#         y_train = pd.read_csv("outputs/y_train.csv").iloc[:, 0]
-#         y_test = pd.read_csv("outputs/y_test.csv").iloc[:, 0]
+        # Load preprocessed data
+        X_train = pd.read_csv("outputs/X_train.csv")
+        X_test = pd.read_csv("outputs/X_test.csv")
+        y_train = pd.read_csv("outputs/y_train.csv").iloc[:, 0]
+        y_test = pd.read_csv("outputs/y_test.csv").iloc[:, 0]
         
-#         # For large datasets, we'll use a subset for SVR training due to computational constraints
-#         if len(X_train) > 5000:
-#             print("  Using subset of data for SVR training (computational efficiency)")
-#             subset_indices = np.random.choice(len(X_train), 5000, replace=False)
-#             X_train_subset = X_train.iloc[subset_indices]
-#             y_train_subset = y_train.iloc[subset_indices]
-#         else:
-#             X_train_subset = X_train
-#             y_train_subset = y_train
+        # For large datasets, we'll use a subset for SVR training due to computational constraints
+        if len(X_train) > 5000:
+            print("  Using subset of data for SVR training (computational efficiency)")
+            subset_indices = np.random.choice(len(X_train), 5000, replace=False)
+            X_train_subset = X_train.iloc[subset_indices]
+            y_train_subset = y_train.iloc[subset_indices]
+        else:
+            X_train_subset = X_train
+            y_train_subset = y_train
         
-#         # Create and train model
-#         model = SVR(
-#             kernel='rbf',
-#             C=100,
-#             gamma='scale',
-#             epsilon=0.1
-#         )
+        # Create and train model
+        model = SVR(
+            kernel='rbf',
+            C=100,
+            gamma='scale',
+            epsilon=0.1
+        )
         
-#         print("  Training SVR...")
-#         model.fit(X_train_subset, y_train_subset)
+        print("  Training SVR...")
+        model.fit(X_train_subset, y_train_subset)
         
-#         # Make predictions
-#         y_pred = model.predict(X_test)
+        # Make predictions
+        y_pred = model.predict(X_test)
         
-#         # Calculate metrics
-#         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-#         mae = mean_absolute_error(y_test, y_pred)
-#         r2 = r2_score(y_test, y_pred)
+        # Calculate metrics
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
         
-#         print(f"  SVR Results: RMSE={rmse:.2f}, MAE={mae:.2f}, R²={r2:.4f}")
+        print(f"  SVR Results: RMSE={rmse:.2f}, MAE={mae:.2f}, R²={r2:.4f}")
         
-#         # Save model and predictions
-#         joblib.dump(model, "outputs/model_svr.pkl")
-#         pd.DataFrame({'predictions': y_pred}).to_csv("outputs/predictions_svr.csv", index=False)
+        # Save model and predictions
+        joblib.dump(model, "outputs/model_svr.pkl")
+        pd.DataFrame({'predictions': y_pred}).to_csv("outputs/predictions_svr.csv", index=False)
         
-#         print("  ✓ SVR model saved")
+        print("  ✓ SVR model saved")
 
 
 def run_data_preprocessing():
@@ -311,27 +311,27 @@ def run_model_training():
     except Exception as e:
         print(f"❌ XGBoost training failed: {e}")
     
-    # # Train Random Forest
-    # try:
-    #     print("\n🌲 Training Model 2/3: Random Forest")
-    #     start_time = time.time()
-    #     train_random_forest_model()
-    #     end_time = time.time()
-    #     models_trained.append(f"Random Forest ({end_time - start_time:.1f}s)")
-    #     print(f"   Training time: {end_time - start_time:.1f} seconds")
-    # except Exception as e:
-    #     print(f"❌ Random Forest training failed: {e}")
+    # Train Random Forest
+    try:
+        print("\n🌲 Training Model 2/3: Random Forest")
+        start_time = time.time()
+        train_random_forest_model()
+        end_time = time.time()
+        models_trained.append(f"Random Forest ({end_time - start_time:.1f}s)")
+        print(f"   Training time: {end_time - start_time:.1f} seconds")
+    except Exception as e:
+        print(f"❌ Random Forest training failed: {e}")
     
-    # # Train SVR
-    # try:
-    #     print("\n⚡ Training Model 3/3: Support Vector Regression")
-    #     start_time = time.time()
-    #     train_svr_model()
-    #     end_time = time.time()
-    #     models_trained.append(f"SVR ({end_time - start_time:.1f}s)")
-    #     print(f"   Training time: {end_time - start_time:.1f} seconds")
-    # except Exception as e:
-    #     print(f"❌ SVR training failed: {e}")
+    # Train SVR
+    try:
+        print("\n⚡ Training Model 3/3: Support Vector Regression")
+        start_time = time.time()
+        train_svr_model()
+        end_time = time.time()
+        models_trained.append(f"SVR ({end_time - start_time:.1f}s)")
+        print(f"   Training time: {end_time - start_time:.1f} seconds")
+    except Exception as e:
+        print(f"❌ SVR training failed: {e}")
     
     if models_trained:
         print(f"\n✅ Model training completed!")

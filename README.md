@@ -41,7 +41,7 @@ Predicting-Urban-Building-Electricity-Consumption/
 1. **Clone the repository** (or copy the project folder)
 
 2. **Create virtual environment (optional but recommended)**  
-venv\Scripts\activate
+
    ```bash
    python -m venv venv
    venv\Scripts\activate  # Windows
