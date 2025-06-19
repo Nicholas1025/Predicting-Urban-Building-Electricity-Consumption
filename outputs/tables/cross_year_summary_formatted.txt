@@ -1,0 +1,8 @@
+CROSS-YEAR MODEL PERFORMANCE SUMMARY
+================================================================================
+
+Model                    Mean Perf   Std     Best Year   Worst Year  Metric      
+---------------------------------------------------------------------------------
+XGBoost (Regression)     -200923.0156nan     2021        2021        R² Score    
+SVR (Regression)         -202286.3127nan     2021        2021        R² Score    
+Random Forest (Regression)-202839.8956nan     2021        2021        R² Score    

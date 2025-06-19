@@ -63,6 +63,23 @@ def load_classification_data():
 
 
 def prepare_classification_data(X, y, test_size=0.2, random_state=42):
+    print(f"Splitting data: {1-test_size:.0%} train, {test_size:.0%} test")
+    
+    # ✅ 添加这段代码 - 标签编码
+    print("Encoding string labels to numeric...")
+    from sklearn.preprocessing import LabelEncoder
+    label_encoder = LabelEncoder()
+    y_encoded = label_encoder.fit_transform(y)
+    
+    # 打印编码映射
+    label_mapping = dict(zip(label_encoder.classes_, range(len(label_encoder.classes_))))
+    print(f"Label mapping: {label_mapping}")
+    
+    # Split the data - 使用编码后的标签
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y_encoded, test_size=test_size, random_state=random_state, 
+        stratify=y_encoded  # 使用编码后的标签
+    )
     """
     Prepare data for classification training
     

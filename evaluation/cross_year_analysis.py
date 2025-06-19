@@ -48,12 +48,38 @@ def load_individual_dataset(file_path, year):
         # Standardize columns
         df_std = standardize_column_names(df)
         
-        # Create target variable
-        df_with_target, target_col = create_unified_target_variable(df_std)
+        try:
+            df_with_target, target_col = create_unified_target_variable(df_std)
+
+            if target_col not in df_with_target.columns:
+                raise ValueError(f"Target column {target_col} not created successfully")
+                
+
+            if isinstance(df_with_target[target_col], pd.DataFrame):
+                print(f"Warning: Target variable is DataFrame, taking first column")
+                df_with_target[target_col] = df_with_target[target_col].iloc[:, 0]
+            
+        except Exception as e:
+            print(f"Error in target variable creation: {e}")
+
+            numerical_cols = df_std.select_dtypes(include=[np.number]).columns
+            if len(numerical_cols) > 0:
+                target_col = numerical_cols[0]
+                df_with_target = df_std.copy()
+                df_with_target['EnergyConsumption'] = df_with_target[target_col]
+                target_col = 'EnergyConsumption'
+                print(f"Fallback: Using {numerical_cols[0]} as target variable")
+            else:
+                print(f"No suitable target variable found in {year} dataset")
+                return None, None, None, None
         
         # Remove invalid rows
         valid_mask = ~(df_with_target[target_col].isnull() | (df_with_target[target_col] <= 0))
         df_clean = df_with_target[valid_mask].copy()
+        
+        if len(df_clean) == 0:
+            print(f"No valid data remaining after cleaning for {year}")
+            return None, None, None, None
         
         # Create classification labels
         labels = create_energy_efficiency_labels(df_clean[target_col])
@@ -67,7 +93,8 @@ def load_individual_dataset(file_path, year):
             'OSEBuildingID', 'BuildingName', 'Address', 'City', 'State',
             'ZipCode', 'CouncilDistrictCode', 'Neighborhood', 
             'TaxParcelIdentificationNumber', 'ComplianceStatus', 
-            'Comments', 'DefaultData', 'ListOfAllPropertyUseTypes'
+            'Comments', 'DefaultData', 'ListOfAllPropertyUseTypes',
+            'EnergyConsumption'   
         ]
         
         existing_cols_to_drop = [col for col in columns_to_drop if col in features.columns]
@@ -83,12 +110,21 @@ def load_individual_dataset(file_path, year):
             else:
                 le = LabelEncoder()
                 features[col] = features[col].fillna('Unknown')
-                features[col] = le.fit_transform(features[col].astype(str))
+                try:
+                    features[col] = le.fit_transform(features[col].astype(str))
+                except Exception as e:
+                    print(f"Warning: Could not encode {col}, dropping it: {e}")
+                    features = features.drop(columns=[col])
         
         # Handle missing values
         numerical_cols = features.select_dtypes(include=[np.number]).columns
         if len(numerical_cols) > 0:
             features[numerical_cols] = features[numerical_cols].fillna(features[numerical_cols].median())
+        
+        # Remove constant columns
+        constant_cols = [col for col in features.columns if features[col].nunique() <= 1]
+        if constant_cols:
+            features = features.drop(columns=constant_cols)
         
         print(f"  Processed shape: {features.shape}")
         print(f"  Target samples: {len(target)}")
@@ -106,8 +142,9 @@ def load_individual_dataset(file_path, year):
         
     except Exception as e:
         print(f"Error processing {year} dataset: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None, None, None
-
 
 def align_features_with_unified(features, unified_feature_names):
     """

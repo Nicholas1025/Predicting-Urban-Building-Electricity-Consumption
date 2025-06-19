@@ -481,6 +481,150 @@ def split_and_scale_data(X, y, test_size=0.2, random_state=42):
     
     return X_train_scaled, X_test_scaled, y_train, y_test, scaler
 
+"""
+简化的数据预处理函数
+添加到 preprocessing/clean_data.py 文件的末尾
+"""
+
+def preprocess_data(file_path, test_size=0.2, random_state=42):
+    """
+    简化的数据预处理函数，用于单个数据集
+    
+    Args:
+        file_path (str): CSV文件路径
+        test_size (float): 测试集比例
+        random_state (int): 随机种子
+        
+    Returns:
+        tuple: (X_train, X_test, y_train, y_test, scaler, feature_names)
+    """
+    import pandas as pd
+    import numpy as np
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler, LabelEncoder
+    from sklearn.impute import SimpleImputer
+    
+    print(f"Loading data from: {file_path}")
+    
+    # 加载数据
+    df = pd.read_csv(file_path)
+    print(f"Original shape: {df.shape}")
+    
+    # 寻找目标变量（能源使用相关列）
+    target_candidates = [
+        'SiteEnergyUse(kBtu)', 'SiteEnergyUseWN(kBtu)', 
+        'SourceEUI(kBtu/sf)', 'SiteEUI(kBtu/sf)',
+        'TotalGHGEmissions', 'ENERGYSTARScore'
+    ]
+    
+    target_col = None
+    for candidate in target_candidates:
+        if candidate in df.columns and df[candidate].notna().sum() > 100:
+            target_col = candidate
+            break
+    
+    if target_col is None:
+        # 寻找数值列作为目标
+        numerical_cols = df.select_dtypes(include=[np.number]).columns
+        for col in numerical_cols:
+            if df[col].notna().sum() > 100 and df[col].std() > 0:
+                target_col = col
+                break
+    
+    if target_col is None:
+        raise ValueError("No suitable target variable found")
+    
+    print(f"Using '{target_col}' as target variable")
+    
+    # 分离特征和目标
+    y = df[target_col].copy()
+    X = df.drop(columns=[target_col])
+    
+    # 移除无效目标值
+    if 'Energy' in target_col or 'GHG' in target_col:
+        valid_mask = ~(y.isnull() | (y <= 0))
+    else:
+        valid_mask = ~y.isnull()
+    
+    X = X[valid_mask]
+    y = y[valid_mask]
+    
+    print(f"After removing invalid targets: {X.shape}")
+    
+    # 删除不相关的列
+    irrelevant_cols = [
+        'OSEBuildingID', 'BuildingName', 'PropertyName', 'Address', 'City', 'State',
+        'ZipCode', 'CouncilDistrictCode', 'Neighborhood', 'TaxParcelIdentificationNumber',
+        'ComplianceStatus', 'Comments', 'DefaultData', 'ListOfAllPropertyUseTypes'
+    ]
+    
+    existing_irrelevant = [col for col in irrelevant_cols if col in X.columns]
+    if existing_irrelevant:
+        X = X.drop(columns=existing_irrelevant)
+        print(f"Dropped {len(existing_irrelevant)} irrelevant columns")
+    
+    # 处理分类变量
+    categorical_cols = X.select_dtypes(include=['object']).columns
+    
+    for col in categorical_cols:
+        if X[col].nunique() > 50:  # 太多唯一值
+            X = X.drop(columns=[col])
+            print(f"Dropped {col} - too many unique values")
+        else:
+            # 标签编码
+            le = LabelEncoder()
+            X[col] = X[col].fillna('Unknown')
+            X[col] = le.fit_transform(X[col].astype(str))
+    
+    # 处理缺失值
+    numerical_cols = X.select_dtypes(include=[np.number]).columns
+    if len(numerical_cols) > 0:
+        imputer = SimpleImputer(strategy='median')
+        X[numerical_cols] = imputer.fit_transform(X[numerical_cols])
+    
+    # 移除常数列
+    constant_cols = [col for col in X.columns if X[col].nunique() <= 1]
+    if constant_cols:
+        X = X.drop(columns=constant_cols)
+        print(f"Dropped {len(constant_cols)} constant columns")
+    
+    # 移除高度相关的特征
+    if len(X.columns) > 1:
+        corr_matrix = X.corr().abs()
+        upper_triangle = corr_matrix.where(
+            np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
+        )
+        
+        high_corr_features = [column for column in upper_triangle.columns 
+                             if any(upper_triangle[column] > 0.95)]
+        
+        if high_corr_features:
+            X = X.drop(columns=high_corr_features)
+            print(f"Dropped {len(high_corr_features)} highly correlated features")
+    
+    print(f"Final feature count: {X.shape[1]}")
+    
+    # 分割数据
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+    
+    # 标准化
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # 转换回DataFrame
+    X_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns, index=X_train.index)
+    X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test.index)
+    
+    feature_names = X_train.columns.tolist()
+    
+    print(f"Train set: {X_train_scaled.shape}")
+    print(f"Test set: {X_test_scaled.shape}")
+    print(f"Target range: [{y.min():.0f}, {y.max():.0f}]")
+    
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
 
 def preprocess_multiple_datasets(file_paths, test_size=0.2, random_state=42):
     """
