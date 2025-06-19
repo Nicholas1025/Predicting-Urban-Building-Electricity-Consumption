@@ -336,42 +336,65 @@ def generate_project_summary(pipeline_result):
 
 
 def interactive_menu():
-    """Interactive menu for running different components"""
     while True:
         print_banner("BUILDING ENERGY PREDICTION - INTERACTIVE MENU")
         print("Choose an option:")
         print("1. 🔍 System Check (dependencies, data files)")
-        print("2. 🚀 Run Complete Pipeline")
-        print("3. 📊 Check Output Files")
-        print("4. 🌐 Start Web Dashboard")
-        print("5. 📋 View Project Summary")
-        print("6. ❌ Exit")
+        print("2. 🚀 Run Complete Pipeline (Combined Datasets)")
+        print("3. 🎯 Run Individual Dataset Analysis (NEW - FIX BUGS)")  # 新增
+        print("4. 📊 Check Output Files") 
+        print("5. 🌐 Start Web Dashboard")
+        print("6. 📋 View Project Summary")
+        print("7. ❌ Exit")
         
         try:
-            choice = input("\nEnter choice (1-6): ").strip()
+            choice = input("\nEnter choice (1-7): ").strip()
             
             if choice == "1":
                 system_check()
             elif choice == "2":
                 run_complete_pipeline()
-            elif choice == "3":
-                check_output_files()
+            elif choice == "3":  # 新增选项
+                run_individual_analysis_option()
             elif choice == "4":
+                check_output_files()
+            elif choice == "5":
                 start_web_dashboard()
                 break
-            elif choice == "5":
-                view_project_summary()
             elif choice == "6":
+                view_project_summary()
+            elif choice == "7":
                 print("👋 Goodbye!")
                 break
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-7.")
                 
         except KeyboardInterrupt:
             print("\n👋 Goodbye!")
             break
-        except Exception as e:
-            print(f"❌ Error: {e}")
+
+def run_individual_analysis_option():
+    """运行独立数据集分析选项"""
+    print_banner("INDIVIDUAL DATASET ANALYSIS")
+    print("🎯 This mode analyzes each dataset independently to avoid compatibility issues")
+    print("✅ Fixes cross-year negative R² problems") 
+    print("📊 Generates separate results for Seattle 2015, Seattle 2016, and NYC 2021")
+    
+    confirm = input("\n🚀 Start individual analysis? (y/n): ").lower().strip()
+    if confirm == 'y':
+        from main_individual import run_individual_analysis
+        results = run_individual_analysis()
+        
+        # 显示结果摘要
+        successful = sum(1 for r in results.values() if r['success'])
+        print(f"\n📊 Analysis completed: {successful}/{len(results)} datasets successful")
+        
+        if successful > 0:
+            dashboard = input("\n🌐 Start dashboard to view results? (y/n): ").lower().strip()
+            if dashboard == 'y':
+                start_web_dashboard()
+    else:
+        print("❌ Analysis cancelled")
 
 
 def system_check():
