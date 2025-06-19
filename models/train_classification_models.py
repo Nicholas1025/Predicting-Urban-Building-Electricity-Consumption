@@ -13,7 +13,7 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     confusion_matrix, classification_report
 )
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -63,23 +63,6 @@ def load_classification_data():
 
 
 def prepare_classification_data(X, y, test_size=0.2, random_state=42):
-    print(f"Splitting data: {1-test_size:.0%} train, {test_size:.0%} test")
-    
-    # ✅ 添加这段代码 - 标签编码
-    print("Encoding string labels to numeric...")
-    from sklearn.preprocessing import LabelEncoder
-    label_encoder = LabelEncoder()
-    y_encoded = label_encoder.fit_transform(y)
-    
-    # 打印编码映射
-    label_mapping = dict(zip(label_encoder.classes_, range(len(label_encoder.classes_))))
-    print(f"Label mapping: {label_mapping}")
-    
-    # Split the data - 使用编码后的标签
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y_encoded, test_size=test_size, random_state=random_state, 
-        stratify=y_encoded  # 使用编码后的标签
-    )
     """
     Prepare data for classification training
     
@@ -90,14 +73,23 @@ def prepare_classification_data(X, y, test_size=0.2, random_state=42):
         random_state (int): Random state
         
     Returns:
-        tuple: (X_train, X_test, y_train, y_test, scaler)
+        tuple: (X_train, X_test, y_train, y_test, scaler, label_encoder)
     """
     print(f"Splitting data: {1-test_size:.0%} train, {test_size:.0%} test")
     
-    # Split the data
+    # Encode string labels to numeric first
+    print("Encoding string labels to numeric...")
+    label_encoder = LabelEncoder()
+    y_encoded = label_encoder.fit_transform(y)
+    
+    # Print encoding mapping
+    label_mapping = dict(zip(label_encoder.classes_, range(len(label_encoder.classes_))))
+    print(f"Label mapping: {label_mapping}")
+    
+    # Split the data using encoded labels
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state, 
-        stratify=y  # Ensure balanced splits
+        X, y_encoded, test_size=test_size, random_state=random_state, 
+        stratify=y_encoded  # Use encoded labels for stratification
     )
     
     # Scale features for SVM
@@ -112,7 +104,7 @@ def prepare_classification_data(X, y, test_size=0.2, random_state=42):
     print(f"Training set: {X_train_scaled.shape}")
     print(f"Test set: {X_test_scaled.shape}")
     
-    return X_train_scaled, X_test_scaled, y_train, y_test, scaler
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, label_encoder
 
 
 def train_random_forest_classifier(X_train, y_train, perform_tuning=False):
@@ -180,7 +172,7 @@ def train_xgboost_classifier(X_train, y_train, perform_tuning=False):
     
     Args:
         X_train: Training features
-        y_train: Training labels
+        y_train: Training labels (must be numeric)
         perform_tuning: Whether to perform hyperparameter tuning
         
     Returns:
@@ -189,6 +181,11 @@ def train_xgboost_classifier(X_train, y_train, perform_tuning=False):
     print("\n" + "="*50)
     print("TRAINING XGBOOST CLASSIFIER")
     print("="*50)
+    
+    # Ensure labels are numeric
+    if not np.issubdtype(y_train.dtype, np.integer):
+        print("Warning: Converting labels to numeric for XGBoost")
+        y_train = pd.Series(y_train).astype(int)
     
     if perform_tuning:
         print("Performing hyperparameter tuning...")
@@ -258,7 +255,7 @@ def train_svm_classifier(X_train, y_train, use_subset=True, subset_size=5000, pe
         print(f"Using subset of {subset_size} samples for SVM training (computational efficiency)")
         subset_indices = np.random.choice(len(X_train), subset_size, replace=False)
         X_train_svm = X_train.iloc[subset_indices]
-        y_train_svm = y_train.iloc[subset_indices]
+        y_train_svm = y_train[subset_indices] if hasattr(y_train, 'iloc') else y_train[subset_indices]
     else:
         X_train_svm = X_train
         y_train_svm = y_train
@@ -303,7 +300,7 @@ def train_svm_classifier(X_train, y_train, use_subset=True, subset_size=5000, pe
     return svm_model
 
 
-def evaluate_classification_model(model, X_train, X_test, y_train, y_test, model_name):
+def evaluate_classification_model(model, X_train, X_test, y_train, y_test, model_name, label_encoder):
     """
     Evaluate classification model with all required metrics
     
@@ -312,6 +309,7 @@ def evaluate_classification_model(model, X_train, X_test, y_train, y_test, model
         X_train, X_test: Feature data
         y_train, y_test: Label data
         model_name: Name of the model
+        label_encoder: Label encoder for converting back to string labels
         
     Returns:
         dict: Evaluation results
@@ -340,9 +338,12 @@ def evaluate_classification_model(model, X_train, X_test, y_train, y_test, model
     print(f"Test Recall:       {test_recall:.4f}")
     print(f"Test F1-Score:     {test_f1:.4f}")
     
-    # Detailed classification report
+    # Detailed classification report with original labels
+    y_test_labels = label_encoder.inverse_transform(y_test)
+    y_test_pred_labels = label_encoder.inverse_transform(y_test_pred)
+    
     print(f"\nDetailed Classification Report:")
-    print(classification_report(y_test, y_test_pred))
+    print(classification_report(y_test_labels, y_test_pred_labels))
     
     # Check for overfitting
     accuracy_diff = abs(train_accuracy - test_accuracy)
@@ -363,18 +364,21 @@ def evaluate_classification_model(model, X_train, X_test, y_train, y_test, model
         'Recall': test_recall,
         'F1_Score': test_f1,
         'Predictions': y_test_pred,
-        'True_Labels': y_test
+        'True_Labels': y_test,
+        'Predictions_Text': y_test_pred_labels,
+        'True_Labels_Text': y_test_labels
     }
     
     return results
 
 
-def plot_confusion_matrices(all_results, save_dir="outputs/charts"):
+def plot_confusion_matrices(all_results, label_encoder, save_dir="outputs/charts"):
     """
     Plot confusion matrices for all models
     
     Args:
         all_results (list): List of evaluation results
+        label_encoder: Label encoder for getting class names
         save_dir (str): Directory to save plots
     """
     print("\nGenerating confusion matrices...")
@@ -384,6 +388,8 @@ def plot_confusion_matrices(all_results, save_dir="outputs/charts"):
     
     if n_models == 1:
         axes = [axes]
+    
+    class_names = label_encoder.classes_
     
     for idx, results in enumerate(all_results):
         model_name = results['Model']
@@ -395,8 +401,8 @@ def plot_confusion_matrices(all_results, save_dir="outputs/charts"):
         
         # Plot
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                   xticklabels=sorted(y_true.unique()),
-                   yticklabels=sorted(y_true.unique()),
+                   xticklabels=class_names,
+                   yticklabels=class_names,
                    ax=axes[idx])
         
         axes[idx].set_title(f'{model_name}\nConfusion Matrix')
@@ -460,13 +466,14 @@ def plot_classification_metrics_comparison(results_df, save_dir="outputs/charts"
     print(f"Classification metrics comparison saved to: {save_dir}/classification_metrics_comparison.png")
 
 
-def save_classification_models_and_predictions(models, results, save_dir="outputs"):
+def save_classification_models_and_predictions(models, results, label_encoder, save_dir="outputs"):
     """
     Save trained classification models and predictions
     
     Args:
         models (dict): Dictionary of trained models
         results (list): List of evaluation results
+        label_encoder: Label encoder
         save_dir (str): Directory to save files
     """
     print(f"\nSaving classification models and predictions...")
@@ -479,6 +486,10 @@ def save_classification_models_and_predictions(models, results, save_dir="output
         joblib.dump(model, model_filename)
         print(f"Model saved: {model_filename}")
     
+    # Save label encoder
+    joblib.dump(label_encoder, f"{save_dir}/models/label_encoder.pkl")
+    print(f"Label encoder saved: {save_dir}/models/label_encoder.pkl")
+    
     # Save predictions
     for result in results:
         model_name = result['Model'].lower().replace(' ', '_')
@@ -486,7 +497,9 @@ def save_classification_models_and_predictions(models, results, save_dir="output
         
         predictions_df = pd.DataFrame({
             'predictions': result['Predictions'],
-            'true_labels': result['True_Labels']
+            'true_labels': result['True_Labels'],
+            'predictions_text': result['Predictions_Text'],
+            'true_labels_text': result['True_Labels_Text']
         })
         predictions_df.to_csv(pred_filename, index=False)
         print(f"Predictions saved: {pred_filename}")
@@ -631,8 +644,8 @@ def main():
     
     X, y, feature_names = data
     
-    # Prepare data
-    X_train, X_test, y_train, y_test, scaler = prepare_classification_data(X, y)
+    # Prepare data (includes label encoding)
+    X_train, X_test, y_train, y_test, scaler, label_encoder = prepare_classification_data(X, y)
     
     # Ask user about hyperparameter tuning
     perform_tuning = input("\nPerform hyperparameter tuning? (y/n, default=n): ").lower().strip() == 'y'
@@ -643,7 +656,7 @@ def main():
     # Random Forest
     models['Random Forest'] = train_random_forest_classifier(X_train, y_train, perform_tuning)
     
-    # XGBoost
+    # XGBoost (now with proper numeric labels)
     models['XGBoost'] = train_xgboost_classifier(X_train, y_train, perform_tuning)
     
     # SVM
@@ -652,25 +665,26 @@ def main():
     # Evaluate all models
     all_results = []
     for model_name, model in models.items():
-        results = evaluate_classification_model(model, X_train, X_test, y_train, y_test, model_name)
+        results = evaluate_classification_model(model, X_train, X_test, y_train, y_test, model_name, label_encoder)
         all_results.append(results)
     
     # Create results dataframe
-    results_df = pd.DataFrame([{k: v for k, v in result.items() if k not in ['Predictions', 'True_Labels']} 
+    results_df = pd.DataFrame([{k: v for k, v in result.items() 
+                               if k not in ['Predictions', 'True_Labels', 'Predictions_Text', 'True_Labels_Text']} 
                               for result in all_results])
     
     # Sort by test accuracy
     results_df = results_df.sort_values('Test_Accuracy', ascending=False)
     
     # Generate visualizations
-    plot_confusion_matrices(all_results)
+    plot_confusion_matrices(all_results, label_encoder)
     plot_classification_metrics_comparison(results_df)
     
     # Create professional tables
     report_df = create_professional_results_table(results_df)
     
     # Save models and predictions
-    save_classification_models_and_predictions(models, all_results)
+    save_classification_models_and_predictions(models, all_results, label_encoder)
     
     # Perform cross-validation
     cv_results = perform_cross_validation(models, X_train, y_train)

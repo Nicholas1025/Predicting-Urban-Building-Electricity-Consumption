@@ -44,7 +44,6 @@ def check_python_version():
 
 
 def check_required_packages():
-    """检查必需的包是否安装（修复版）"""
     print("\n📦 Checking required packages...")
     
     package_mapping = {
