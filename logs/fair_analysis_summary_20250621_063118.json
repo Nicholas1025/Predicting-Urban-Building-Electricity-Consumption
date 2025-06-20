@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-06-21T06:31:18.195657",
+  "analysis_mode": "FAIR_INDIVIDUAL_ANALYSIS",
+  "total_time_seconds": 363.59542965888977,
+  "total_time_minutes": 6.059923827648163,
+  "datasets_processed": 3,
+  "successful_analyses": 3,
+  "failed_analyses": 0,
+  "success_rate": 100.0,
+  "average_processing_time": 121.19554281234741,
+  "fairness_features": {
+    "adaptive_thresholds": true,
+    "city_specific_outlier_removal": true,
+    "universal_building_types": true,
+    "equal_treatment_preprocessing": true
+  },
+  "detailed_results": {
+    "seattle_2015_present": {
+      "success": true,
+      "time": 44.829728841781616,
+      "file_path": "data/seattle_2015_present.csv",
+      "processing_mode": "FAIR"
+    },
+    "chicago_energy": {
+      "success": true,
+      "time": 29.822365760803223,
+      "file_path": "data/chicago_energy_benchmarking.csv",
+      "processing_mode": "FAIR"
+    },
+    "washington_dc": {
+      "success": true,
+      "time": 288.9345338344574,
+      "file_path": "data/washington_dc_energy.csv",
+      "processing_mode": "FAIR"
+    }
+  }
+}
