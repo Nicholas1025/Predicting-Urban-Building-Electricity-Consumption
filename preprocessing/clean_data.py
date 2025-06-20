@@ -1,6 +1,6 @@
 """
 Enhanced Data Preprocessing Script for Multiple Building Energy Datasets
-Loads, cleans, and prepares data from Seattle (2015, 2016) and NYC (2021) datasets
+FIXED: Complete version with proper find_target_variable_enhanced function
 """
 
 import pandas as pd
@@ -69,6 +69,308 @@ def identify_dataset_type(df, file_path):
             return 'seattle_2016'
 
 
+def find_target_variable_enhanced(df, dataset_type=None):
+    """
+    Enhanced target variable detection with NYC 2021 specific handling
+    """
+    print("Enhanced target variable detection...")
+    print(f"Dataset type: {dataset_type}")
+    print(f"Available columns: {len(df.columns)}")
+    
+    # Show columns for debugging
+    if len(df.columns) <= 10:
+        print("All columns:")
+        for i, col in enumerate(df.columns, 1):
+            print(f"  {i:2d}. {col}")
+    else:
+        print("First 10 columns:")
+        for i, col in enumerate(df.columns[:10], 1):
+            print(f"  {i:2d}. {col}")
+    
+    # NYC 2021 SPECIFIC HANDLING - Check Energy Star Score first
+    if 'Energy_Star_1-100_Score' in df.columns:
+        valid_count = df['Energy_Star_1-100_Score'].notna().sum()
+        if valid_count > 10:  # Lower threshold for smaller dataset
+            print(f"✓ Found NYC 2021 target: Energy_Star_1-100_Score (with {valid_count} valid values)")
+            return 'Energy_Star_1-100_Score'
+    
+    # Define target patterns by dataset type
+    if dataset_type == 'nyc_2021':
+        # NYC 2021 specific patterns (smaller dataset, different structure)
+        energy_patterns = [
+            'Energy_Star_1-100_Score',
+            'DOF_Gross_Square_Footage',  # Fallback option
+            'Energy_Efficiency_Grade'   # Could be used for classification
+        ]
+        min_valid_threshold = 10  # Lower threshold for small dataset
+    else:
+        # Standard patterns for Seattle datasets
+        energy_patterns = [
+            # Standard patterns
+            'SiteEnergyUse', 'SiteEnergyUse(kBtu)', 'SiteEnergyUseWN(kBtu)', 
+            'SourceEUI(kBtu/sf)', 'SiteEUI(kBtu/sf)',
+            'TotalGHGEmissions', 'ENERGYSTARScore',
+            
+            # NYC-specific patterns (for larger NYC datasets)
+            'Site_EUI_kBtu_ft2', 'Source_EUI_kBtu_ft2',
+            'Weather_Normalized_Site_EUI_kBtu_ft2',
+            'Weather_Normalized_Source_EUI_kBtu_ft2',
+            'Site_Energy_Use_kBtu', 'Weather_Normalized_Site_Energy_Use_kBtu',
+            'Total_GHG_Emissions_Metric_Tons_CO2e',
+            'Weather_Normalized_Site_Natural_Gas_Use_therms',
+            'Weather_Normalized_Site_Electricity_kWh',
+            'ENERGY_STAR_Score',
+            
+            # Alternative naming conventions
+            'site_energy_use', 'source_energy_use',
+            'site_eui', 'source_eui',
+            'energy_use_intensity', 'energy_consumption',
+            'total_energy', 'annual_energy_use',
+            'electricity_use', 'natural_gas_use',
+            'ghg_emissions', 'co2_emissions',
+            'energy_star_score', 'energy_rating'
+        ]
+        min_valid_threshold = 50  # Standard threshold for larger datasets
+    
+    print(f"Using minimum valid threshold: {min_valid_threshold}")
+    
+    # 1. Direct pattern matching
+    print("Checking primary patterns...")
+    for pattern in energy_patterns:
+        if pattern in df.columns:
+            valid_count = df[pattern].notna().sum()
+            if valid_count >= min_valid_threshold:
+                print(f"✓ Found target variable: {pattern} (with {valid_count} valid values)")
+                return pattern
+    
+    # 2. Case-insensitive search
+    print("Trying case-insensitive search...")
+    df_columns_lower = [col.lower() for col in df.columns]
+    
+    for pattern in energy_patterns:
+        pattern_lower = pattern.lower()
+        for i, col_lower in enumerate(df_columns_lower):
+            if pattern_lower == col_lower:  # Exact match (case-insensitive)
+                actual_col = df.columns[i]
+                valid_count = df[actual_col].notna().sum()
+                if valid_count >= min_valid_threshold:
+                    print(f"✓ Found target variable (case-insensitive): {actual_col} (with {valid_count} valid values)")
+                    return actual_col
+    
+    # 3. Partial matching for energy-related terms
+    print("Trying partial matching...")
+    energy_keywords = ['energy', 'eui', 'kbtu', 'ghg', 'emission', 'star', 'consumption', 'use']
+    
+    for col in df.columns:
+        col_lower = col.lower()
+        if any(keyword in col_lower for keyword in energy_keywords):
+            if df[col].dtype in ['int64', 'float64']:  # Numerical column
+                valid_count = df[col].notna().sum()
+                if valid_count >= min_valid_threshold:
+                    # Additional check for reasonable values
+                    try:
+                        min_val = df[col].min()
+                        max_val = df[col].max()
+                        if pd.notna(min_val) and pd.notna(max_val) and max_val > min_val:
+                            print(f"✓ Found potential target (partial): {col} (with {valid_count} valid values)")
+                            return col
+                    except:
+                        continue
+    
+    # 4. Last resort: find any numerical column with sufficient data
+    print("Looking for any suitable numerical column...")
+    numerical_cols = df.select_dtypes(include=[np.number]).columns
+    
+    # Filter out obvious ID and coordinate columns
+    exclude_keywords = ['id', 'bbl', 'bin', 'lat', 'lon', 'x_coord', 'y_coord', 'zip', 'year', 'floor']
+    
+    for col in numerical_cols:
+        col_lower = col.lower()
+        if not any(keyword in col_lower for keyword in exclude_keywords):
+            valid_count = df[col].notna().sum()
+            if valid_count >= min_valid_threshold:
+                try:
+                    variance = df[col].var()
+                    if pd.notna(variance) and variance > 0:
+                        print(f"✓ Found fallback target: {col} (with {valid_count} valid values)")
+                        return col
+                except:
+                    continue
+    
+    # 5. Show available columns for debugging
+    print("❌ No suitable target variable found!")
+    print(f"\nAvailable numerical columns (threshold: {min_valid_threshold}):")
+    numerical_cols = df.select_dtypes(include=[np.number]).columns
+    
+    for i, col in enumerate(numerical_cols, 1):
+        try:
+            valid_count = df[col].notna().sum()
+            if df[col].dtype in ['int64', 'float64']:
+                try:
+                    min_val = df[col].min()
+                    max_val = df[col].max()
+                    print(f"  {i:2d}. {col}: {valid_count} valid, range [{min_val}, {max_val}]")
+                except:
+                    print(f"  {i:2d}. {col}: {valid_count} valid values")
+        except:
+            print(f"  {i:2d}. {col}: error reading")
+    
+    return None
+
+
+def preprocess_data(file_path, test_size=0.2, random_state=42):
+    """
+    Enhanced data preprocessing function for individual datasets with improved target detection
+    
+    Args:
+        file_path (str): CSV file path
+        test_size (float): Test set proportion
+        random_state (int): Random seed
+        
+    Returns:
+        tuple: (X_train, X_test, y_train, y_test, scaler, feature_names)
+    """
+    print(f"Loading data from: {file_path}")
+    
+    # Load data
+    df = pd.read_csv(file_path)
+    print(f"Original shape: {df.shape}")
+    
+    # Identify dataset type
+    dataset_type = identify_dataset_type(df, file_path)
+    print(f"Dataset type: {dataset_type}")
+    
+    # Enhanced target variable detection
+    target_col = find_target_variable_enhanced(df, dataset_type)
+    
+    if target_col is None:
+        print("ERROR: No suitable target variable found!")
+        print("Available columns:")
+        for i, col in enumerate(df.columns):
+            print(f"  {i+1:2d}. {col} ({df[col].dtype})")
+        raise ValueError("No suitable target variable found")
+    
+    print(f"Using '{target_col}' as target variable")
+    
+    # Separate features and target
+    y = df[target_col].copy()
+    X = df.drop(columns=[target_col])
+    
+    # Remove invalid target values
+    if 'energy' in target_col.lower() or 'ghg' in target_col.lower() or 'emission' in target_col.lower():
+        valid_mask = ~(y.isnull() | (y <= 0))
+    elif 'star' in target_col.lower() or 'score' in target_col.lower():
+        # For scores, keep values between 1-100
+        valid_mask = ~(y.isnull()) & (y >= 1) & (y <= 100)
+    else:
+        # For other metrics, just remove null values
+        valid_mask = ~y.isnull()
+    
+    X = X[valid_mask]
+    y = y[valid_mask]
+    
+    print(f"After removing invalid targets: {X.shape}")
+    print(f"Target range: [{y.min():.2f}, {y.max():.2f}]")
+    
+    # Delete irrelevant columns
+    irrelevant_cols = [
+        'OSEBuildingID', 'BuildingName', 'PropertyName', 'Address', 'City', 'State',
+        'ZipCode', 'CouncilDistrictCode', 'Neighborhood', 'TaxParcelIdentificationNumber',
+        'ComplianceStatus', 'Comments', 'DefaultData', 'ListOfAllPropertyUseTypes',
+        '10_Digit_BBL', 'Street_Number', 'Street_Name',
+        # NYC specific columns to drop
+        'Property_Name', 'Primary_Property_Type___Self_Selected',
+        'Borough', 'Postcode', 'BBL___10_digits',
+        'NYC_Borough__Building_Class___Tax_Class_1',
+        'NYC_Building_Identification_Number__BIN_',
+        'Reported_Address', 'Property_Floor_Area_Buildings_sq_ft'
+    ]
+    
+    existing_irrelevant = [col for col in irrelevant_cols if col in X.columns]
+    if existing_irrelevant:
+        X = X.drop(columns=existing_irrelevant)
+        print(f"Dropped {len(existing_irrelevant)} irrelevant columns")
+    
+    # Handle categorical variables
+    categorical_cols = X.select_dtypes(include=['object']).columns
+    
+    for col in categorical_cols:
+        if X[col].nunique() > 50:  # Too many unique values
+            X = X.drop(columns=[col])
+            print(f"Dropped {col} - too many unique values")
+        else:
+            # Label encoding
+            le = LabelEncoder()
+            X[col] = X[col].fillna('Unknown')
+            try:
+                X[col] = le.fit_transform(X[col].astype(str))
+            except Exception as e:
+                print(f"Warning: Could not encode {col}, dropping it")
+                X = X.drop(columns=[col])
+    
+    # Handle missing values
+    numerical_cols = X.select_dtypes(include=[np.number]).columns
+    if len(numerical_cols) > 0:
+        for col in numerical_cols:
+            if X[col].isnull().sum() > 0:
+                median_val = X[col].median()
+                if pd.isna(median_val):
+                    X[col] = X[col].fillna(0)
+                else:
+                    X[col] = X[col].fillna(median_val)
+    
+    # Remove constant columns
+    constant_cols = [col for col in X.columns if X[col].nunique() <= 1]
+    if constant_cols:
+        X = X.drop(columns=constant_cols)
+        print(f"Dropped {len(constant_cols)} constant columns")
+    
+    # Remove highly correlated features
+    if len(X.columns) > 1:
+        try:
+            corr_matrix = X.corr().abs()
+            upper_triangle = corr_matrix.where(
+                np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
+            )
+            
+            high_corr_features = [column for column in upper_triangle.columns 
+                                 if any(upper_triangle[column] > 0.95)]
+            
+            if high_corr_features:
+                X = X.drop(columns=high_corr_features)
+                print(f"Dropped {len(high_corr_features)} highly correlated features")
+        except Exception as e:
+            print(f"Warning: Could not perform correlation analysis: {e}")
+    
+    print(f"Final feature count: {X.shape[1]}")
+    
+    if X.shape[1] == 0:
+        raise ValueError("No features remaining after preprocessing")
+    
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+    
+    # Standardize
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # Convert back to DataFrame
+    X_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns, index=X_train.index)
+    X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test.index)
+    
+    feature_names = X_train.columns.tolist()
+    
+    print(f"Train set: {X_train_scaled.shape}")
+    print(f"Test set: {X_test_scaled.shape}")
+    print(f"Target range: [{y.min():.0f}, {y.max():.0f}]")
+    
+    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
+
+
+# Keep all other existing functions unchanged...
 def standardize_seattle_2015(df):
     """
     Standardize Seattle 2015 dataset to common format
@@ -481,150 +783,6 @@ def split_and_scale_data(X, y, test_size=0.2, random_state=42):
     
     return X_train_scaled, X_test_scaled, y_train, y_test, scaler
 
-"""
-简化的数据预处理函数
-添加到 preprocessing/clean_data.py 文件的末尾
-"""
-
-def preprocess_data(file_path, test_size=0.2, random_state=42):
-    """
-    简化的数据预处理函数，用于单个数据集
-    
-    Args:
-        file_path (str): CSV文件路径
-        test_size (float): 测试集比例
-        random_state (int): 随机种子
-        
-    Returns:
-        tuple: (X_train, X_test, y_train, y_test, scaler, feature_names)
-    """
-    import pandas as pd
-    import numpy as np
-    from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import StandardScaler, LabelEncoder
-    from sklearn.impute import SimpleImputer
-    
-    print(f"Loading data from: {file_path}")
-    
-    # 加载数据
-    df = pd.read_csv(file_path)
-    print(f"Original shape: {df.shape}")
-    
-    # 寻找目标变量（能源使用相关列）
-    target_candidates = [
-        'SiteEnergyUse(kBtu)', 'SiteEnergyUseWN(kBtu)', 
-        'SourceEUI(kBtu/sf)', 'SiteEUI(kBtu/sf)',
-        'TotalGHGEmissions', 'ENERGYSTARScore'
-    ]
-    
-    target_col = None
-    for candidate in target_candidates:
-        if candidate in df.columns and df[candidate].notna().sum() > 100:
-            target_col = candidate
-            break
-    
-    if target_col is None:
-        # 寻找数值列作为目标
-        numerical_cols = df.select_dtypes(include=[np.number]).columns
-        for col in numerical_cols:
-            if df[col].notna().sum() > 100 and df[col].std() > 0:
-                target_col = col
-                break
-    
-    if target_col is None:
-        raise ValueError("No suitable target variable found")
-    
-    print(f"Using '{target_col}' as target variable")
-    
-    # 分离特征和目标
-    y = df[target_col].copy()
-    X = df.drop(columns=[target_col])
-    
-    # 移除无效目标值
-    if 'Energy' in target_col or 'GHG' in target_col:
-        valid_mask = ~(y.isnull() | (y <= 0))
-    else:
-        valid_mask = ~y.isnull()
-    
-    X = X[valid_mask]
-    y = y[valid_mask]
-    
-    print(f"After removing invalid targets: {X.shape}")
-    
-    # 删除不相关的列
-    irrelevant_cols = [
-        'OSEBuildingID', 'BuildingName', 'PropertyName', 'Address', 'City', 'State',
-        'ZipCode', 'CouncilDistrictCode', 'Neighborhood', 'TaxParcelIdentificationNumber',
-        'ComplianceStatus', 'Comments', 'DefaultData', 'ListOfAllPropertyUseTypes'
-    ]
-    
-    existing_irrelevant = [col for col in irrelevant_cols if col in X.columns]
-    if existing_irrelevant:
-        X = X.drop(columns=existing_irrelevant)
-        print(f"Dropped {len(existing_irrelevant)} irrelevant columns")
-    
-    # 处理分类变量
-    categorical_cols = X.select_dtypes(include=['object']).columns
-    
-    for col in categorical_cols:
-        if X[col].nunique() > 50:  # 太多唯一值
-            X = X.drop(columns=[col])
-            print(f"Dropped {col} - too many unique values")
-        else:
-            # 标签编码
-            le = LabelEncoder()
-            X[col] = X[col].fillna('Unknown')
-            X[col] = le.fit_transform(X[col].astype(str))
-    
-    # 处理缺失值
-    numerical_cols = X.select_dtypes(include=[np.number]).columns
-    if len(numerical_cols) > 0:
-        imputer = SimpleImputer(strategy='median')
-        X[numerical_cols] = imputer.fit_transform(X[numerical_cols])
-    
-    # 移除常数列
-    constant_cols = [col for col in X.columns if X[col].nunique() <= 1]
-    if constant_cols:
-        X = X.drop(columns=constant_cols)
-        print(f"Dropped {len(constant_cols)} constant columns")
-    
-    # 移除高度相关的特征
-    if len(X.columns) > 1:
-        corr_matrix = X.corr().abs()
-        upper_triangle = corr_matrix.where(
-            np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
-        )
-        
-        high_corr_features = [column for column in upper_triangle.columns 
-                             if any(upper_triangle[column] > 0.95)]
-        
-        if high_corr_features:
-            X = X.drop(columns=high_corr_features)
-            print(f"Dropped {len(high_corr_features)} highly correlated features")
-    
-    print(f"Final feature count: {X.shape[1]}")
-    
-    # 分割数据
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
-    
-    # 标准化
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    
-    # 转换回DataFrame
-    X_train_scaled = pd.DataFrame(X_train_scaled, columns=X_train.columns, index=X_train.index)
-    X_test_scaled = pd.DataFrame(X_test_scaled, columns=X_test.columns, index=X_test.index)
-    
-    feature_names = X_train.columns.tolist()
-    
-    print(f"Train set: {X_train_scaled.shape}")
-    print(f"Test set: {X_test_scaled.shape}")
-    print(f"Target range: [{y.min():.0f}, {y.max():.0f}]")
-    
-    return X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
 
 def preprocess_multiple_datasets(file_paths, test_size=0.2, random_state=42):
     """

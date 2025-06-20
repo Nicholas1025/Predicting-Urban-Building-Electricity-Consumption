@@ -58,6 +58,21 @@ def load_preprocessed_data():
         print(f"Error loading data: {e}")
         return None
 
+def standardize_feature_names(features):
+    """Standardize feature names to avoid training/prediction mismatches"""
+    # Remove special characters and standardize names
+    new_columns = []
+    for col in features.columns:
+        new_col = col.replace('(', '').replace(')', '').replace('/', '_').replace(' ', '_')
+        new_col = new_col.replace(',', '').replace('-', '_').replace('.', '_')
+        new_columns.append(new_col)
+    
+    features.columns = new_columns
+    return features
+
+# Add this function call in load_preprocessed_data() in all individual training scripts:
+# X_train = standardize_feature_names(X_train)
+# X_test = standardize_feature_names(X_test)
 
 def prepare_data_for_svr(X_train, X_test, y_train, y_test, use_subset=True, subset_size=5000):
     """
