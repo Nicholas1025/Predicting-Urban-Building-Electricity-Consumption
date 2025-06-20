@@ -39,75 +39,132 @@ def load_data(file_path):
 
 def identify_dataset_type(df, file_path):
     """
-    Identify which dataset type based on columns
+    Enhanced dataset identification with better column-based detection
     
     Args:
         df (pd.DataFrame): Input dataframe
         file_path (str): Path to identify dataset
         
     Returns:
-        str: Dataset type ('seattle_2016', 'seattle_2015', 'nyc_2021')
+        str: Dataset type ('seattle_2015_present', 'chicago_energy', 'washington_dc')
     """
     filename = os.path.basename(file_path).lower()
     
-    if '2016' in filename or 'Address' in df.columns:
-        return 'seattle_2016'
-    elif '2015' in filename or 'Location' in df.columns:
-        return 'seattle_2015'
-    elif '2021' in filename or '10_Digit_BBL' in df.columns:
-        return 'nyc_2021'
-    else:
-        # Try to infer from columns
-        if 'Address' in df.columns and 'City' in df.columns:
-            return 'seattle_2016'
-        elif 'Location' in df.columns:
-            return 'seattle_2015'
-        elif '10_Digit_BBL' in df.columns:
-            return 'nyc_2021'
-        else:
-            print("Warning: Could not identify dataset type, assuming Seattle 2016 format")
-            return 'seattle_2016'
+    # Primary identification by filename
+    if 'seattle' in filename and ('2015' in filename or 'present' in filename):
+        return 'seattle_2015_present'
+    elif 'chicago' in filename:
+        return 'chicago_energy'
+    elif 'washington' in filename or 'dc' in filename:
+        return 'washington_dc'
+    
+    # Enhanced column-based identification
+    columns_lower = [col.lower() for col in df.columns]
+    column_text = ' '.join(columns_lower)
+    
+    # Washington DC signatures
+    dc_indicators = ['ward', 'portfolio manager', 'federal', 'district']
+    if any(indicator in column_text for indicator in dc_indicators):
+        return 'washington_dc'
+    
+    # Chicago signatures  
+    chicago_indicators = ['chicago energy benchmarking', 'community area', 'chicago']
+    if any(indicator in column_text for indicator in chicago_indicators):
+        return 'chicago_energy'
+    
+    # Seattle signatures
+    seattle_indicators = ['ose building', 'compliance status', 'seattle']
+    if any(indicator in column_text for indicator in seattle_indicators):
+        return 'seattle_2015_present'
+    
+    print(f"Warning: Could not identify dataset type for {filename}, defaulting to Seattle")
+    return 'seattle_2015_present'
 
+def get_city_config(dataset_type):
+    """
+    Get city-specific configuration for fair comparison
+    """
+    configs = {
+        'seattle_2015_present': {
+            'target_patterns': [
+                'Site EUI (kBtu/sf)', 'Site EUI', 'SiteEUI(kBtu/sf)', 'SiteEUI',
+                'Source EUI (kBtu/sf)', 'Source EUI', 'SourceEUI(kBtu/sf)', 'SourceEUI',
+                'ENERGY STAR Score', 'ENERGYSTARScore', 'Energy Star Score',
+                'Total GHG Emissions', 'TotalGHGEmissions', 'GHG Emissions'
+            ],
+            'min_threshold': 100,
+            'irrelevant_cols': [
+                'OSEBuildingID', 'BuildingName', 'PropertyName', 'Address', 'City', 'State',
+                'ZipCode', 'CouncilDistrictCode', 'Neighborhood', 'ComplianceStatus', 'Comments'
+            ],
+            'building_type_col': 'LargestPropertyUseType',
+            'year_col': 'DataYear'
+        },
+        
+        'chicago_energy': {
+            'target_patterns': [
+                'Site EUI', 'Site EUI (kBtu/sf)', 'Site Energy Use Intensity',
+                'ENERGY STAR Score', 'Energy Star Rating', 'Energy Star Score',
+                'Total GHG Emissions', 'GHG Emissions (Metric Tons CO2e)', 'GHG Emissions',
+                'Electricity Use', 'Natural Gas Use'
+            ],
+            'min_threshold': 50,
+            'irrelevant_cols': [
+                'Chicago Energy Benchmarking ID', 'Property Name', 'Reporting Status',
+                'Address', 'City', 'State', 'ZIP Code', 'Community Area'
+            ],
+            'building_type_col': 'Primary Property Type',
+            'year_col': 'Data Year'
+        },
+        
+        'washington_dc': {
+            'target_patterns': [
+                'Site EUI', 'Site EUI (kBtu/sf)', 'Site Energy Use Intensity',
+                'ENERGY STAR Score', 'Energy Star Rating', 'Portfolio Manager Score',
+                'Total CO2 Emissions', 'GHG Emissions', 'Total Emissions',
+                'Electricity Use', 'Natural Gas Use', 'Energy Use'
+            ],
+            'min_threshold': 30,  # Lower threshold for smaller DC dataset
+            'irrelevant_cols': [
+                'Portfolio Manager ID', 'Property Name', 'Address', 'City', 'State',
+                'Postal Code', 'Ward', 'Agency', 'Ownership'
+            ],
+            'building_type_col': 'Property Type',
+            'year_col': 'Year'
+        }
+    }
+    
+    return configs.get(dataset_type, configs['seattle_2015_present'])
 
 def find_target_variable_enhanced(df, dataset_type=None):
     """
-    Enhanced target variable detection with NYC 2021 specific handling
-    FIXED VERSION - 确保对所有数据集都能正确工作
+    City-specific target variable detection for fair comparison
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+        dataset_type (str): Type of dataset
+        
+    Returns:
+        str or None: Name of target variable column
     """
-    print("Enhanced target variable detection...")
-    print(f"Dataset type: {dataset_type}")
+    print(f"Enhanced target detection for {dataset_type}")
     print(f"Available columns: {len(df.columns)}")
     
-    if 'Energy_Star_1-100_Score' in df.columns:
-        valid_count = df['Energy_Star_1-100_Score'].notna().sum()
-        if valid_count > 10:  # 降低阈值适应小数据集
-            print(f"✓ Found NYC 2021 target: Energy_Star_1-100_Score (with {valid_count} valid values)")
-            return 'Energy_Star_1-100_Score'
+    config = get_city_config(dataset_type)
+    energy_patterns = config['target_patterns']
+    min_valid_threshold = config['min_threshold']
     
-    if dataset_type == 'nyc_2021':
-        min_valid_threshold = 10  
-        energy_patterns = [
-            'Energy_Star_1-100_Score',
-            'DOF_Gross_Square_Footage',  
-        ]
-    else:
-        min_valid_threshold = 50  # Seattle 数据集较大
-        energy_patterns = [
-            'SiteEnergyUse', 'SiteEnergyUse(kBtu)', 'SiteEnergyUseWN(kBtu)', 
-            'SourceEUI(kBtu/sf)', 'SiteEUI(kBtu/sf)',
-            'TotalGHGEmissions', 'ENERGYSTARScore',
-            'site_energy_use', 'source_energy_use',
-        ]
+    print(f"Using minimum threshold: {min_valid_threshold} for {dataset_type}")
     
-    print(f"Using minimum valid threshold: {min_valid_threshold}")
-
+    # Exact match with city-specific patterns
     for pattern in energy_patterns:
         if pattern in df.columns:
             valid_count = df[pattern].notna().sum()
             if valid_count >= min_valid_threshold:
-                print(f"✓ Found target variable: {pattern} (with {valid_count} valid values)")
+                print(f"✓ Found target: {pattern} ({valid_count} valid values)")
                 return pattern
-
+    
+    # Case-insensitive matching
     df_columns_lower = [col.lower() for col in df.columns]
     for pattern in energy_patterns:
         pattern_lower = pattern.lower()
@@ -116,10 +173,11 @@ def find_target_variable_enhanced(df, dataset_type=None):
                 actual_col = df.columns[i]
                 valid_count = df[actual_col].notna().sum()
                 if valid_count >= min_valid_threshold:
-                    print(f"✓ Found target variable (case-insensitive): {actual_col}")
+                    print(f"✓ Found target (case-insensitive): {actual_col}")
                     return actual_col
-
-    energy_keywords = ['energy', 'eui', 'kbtu', 'ghg', 'emission', 'star', 'consumption']
+    
+    # Fuzzy matching for variations
+    energy_keywords = ['eui', 'energy', 'star', 'ghg', 'emission', 'co2']
     
     for col in df.columns:
         col_lower = col.lower()
@@ -128,48 +186,183 @@ def find_target_variable_enhanced(df, dataset_type=None):
                 valid_count = df[col].notna().sum()
                 if valid_count >= min_valid_threshold:
                     try:
-                        min_val = df[col].min()
-                        max_val = df[col].max()
-                        if pd.notna(min_val) and pd.notna(max_val) and max_val > min_val:
-                            print(f"✓ Found potential target (partial): {col}")
+                        variance = df[col].var()
+                        if pd.notna(variance) and variance > 0:
+                            print(f"✓ Found target (fuzzy): {col}")
                             return col
                     except:
                         continue
-
-    print("Looking for any suitable numerical column...")
-    numerical_cols = df.select_dtypes(include=[np.number]).columns
-    exclude_keywords = ['id', 'bbl', 'bin', 'lat', 'lon', 'x_coord', 'y_coord', 'zip', 'year']
     
-    for col in numerical_cols:
-        col_lower = col.lower()
-        if not any(keyword in col_lower for keyword in exclude_keywords):
-            valid_count = df[col].notna().sum()
-            if valid_count >= min_valid_threshold:
-                try:
-                    variance = df[col].var()
-                    if pd.notna(variance) and variance > 0:
-                        print(f"✓ Found fallback target: {col}")
-                        return col
-                except:
-                    continue
-    
-    print("❌ No suitable target variable found!")
+    print(f"❌ No suitable target found for {dataset_type}")
     return None
+
+def standardize_building_types(building_type_series, dataset_type):
+    """
+    Standardize building types across different cities for fair comparison
+    
+    Args:
+        building_type_series (pd.Series): Building type column
+        dataset_type (str): Type of dataset
+        
+    Returns:
+        pd.Series: Standardized building types
+    """
+    # Create mapping dictionaries for each city
+    type_mappings = {
+        'seattle_2015_present': {
+            'Office': 'Office',
+            'Multifamily Housing': 'Residential',
+            'Hotel': 'Hospitality',
+            'Retail Store': 'Retail',
+            'Warehouse': 'Warehouse',
+            'Hospital': 'Healthcare',
+            'K-12 School': 'Education',
+            'College/University': 'Education'
+        },
+        
+        'chicago_energy': {
+            'Office': 'Office',
+            'Multifamily': 'Residential',
+            'Hotel': 'Hospitality',
+            'Retail': 'Retail',
+            'Warehouse': 'Warehouse',
+            'Hospital': 'Healthcare',
+            'School': 'Education',
+            'University': 'Education'
+        },
+        
+        'washington_dc': {
+            'Office': 'Office',
+            'Residential': 'Residential',
+            'Hotel': 'Hospitality',
+            'Retail': 'Retail',
+            'Warehouse': 'Warehouse',
+            'Hospital': 'Healthcare',
+            'School': 'Education',
+            'Government': 'Government'  # DC-specific
+        }
+    }
+    
+    mapping = type_mappings.get(dataset_type, {})
+    
+    # Apply fuzzy matching for similar types
+    standardized = building_type_series.copy()
+    for idx, building_type in enumerate(building_type_series):
+        if pd.isna(building_type):
+            continue
+            
+        building_type_lower = str(building_type).lower()
+        
+        # Direct mapping first
+        mapped = False
+        for key, value in mapping.items():
+            if key.lower() in building_type_lower:
+                standardized.iloc[idx] = value
+                mapped = True
+                break
+        
+        # Fuzzy matching if no direct mapping found
+        if not mapped:
+            if any(word in building_type_lower for word in ['office', 'commercial']):
+                standardized.iloc[idx] = 'Office'
+            elif any(word in building_type_lower for word in ['residential', 'apartment', 'housing']):
+                standardized.iloc[idx] = 'Residential'
+            elif any(word in building_type_lower for word in ['retail', 'store', 'shopping']):
+                standardized.iloc[idx] = 'Retail'
+            elif any(word in building_type_lower for word in ['hospital', 'medical', 'health']):
+                standardized.iloc[idx] = 'Healthcare'
+            elif any(word in building_type_lower for word in ['school', 'education', 'university']):
+                standardized.iloc[idx] = 'Education'
+            elif any(word in building_type_lower for word in ['warehouse', 'storage']):
+                standardized.iloc[idx] = 'Warehouse'
+            elif any(word in building_type_lower for word in ['hotel', 'hospitality']):
+                standardized.iloc[idx] = 'Hospitality'
+            elif any(word in building_type_lower for word in ['government', 'federal', 'municipal']):
+                standardized.iloc[idx] = 'Government'
+            else:
+                standardized.iloc[idx] = 'Other'
+    
+    return standardized
+
+def preprocess_data_city_specific(df, dataset_type):
+    """
+    City-specific data preprocessing for fair comparison
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+        dataset_type (str): Type of dataset
+        
+    Returns:
+        pd.DataFrame: Preprocessed dataframe
+    """
+    print(f"Applying city-specific preprocessing for {dataset_type}")
+    config = get_city_config(dataset_type)
+    
+    # Standardize building type column if exists
+    building_type_col = config['building_type_col']
+    if building_type_col in df.columns:
+        # Standardize building types across cities
+        df[building_type_col] = standardize_building_types(df[building_type_col], dataset_type)
+        print(f"Standardized building types in column: {building_type_col}")
+    
+    # Handle year column if exists
+    year_col = config['year_col']
+    if year_col in df.columns:
+        df[year_col] = pd.to_numeric(df[year_col], errors='coerce')
+        print(f"Converted {year_col} to numeric")
+    
+    # City-specific data cleaning
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    original_shape = df.shape[0]
+    
+    if dataset_type == 'washington_dc':
+        # DC: More aggressive outlier removal due to government building specifics
+        for col in numeric_cols:
+            if col in df.columns and df[col].notna().sum() > 10:
+                q1 = df[col].quantile(0.05)  # More conservative
+                q3 = df[col].quantile(0.95)
+                df = df[(df[col] >= q1) & (df[col] <= q3)]
+        print(f"DC: Applied conservative outlier removal (5%-95% range)")
+    
+    elif dataset_type == 'chicago_energy':
+        # Chicago: Handle industrial building specifics
+        for col in numeric_cols:
+            if col in df.columns and df[col].notna().sum() > 10:
+                q1 = df[col].quantile(0.01)
+                q3 = df[col].quantile(0.99)
+                df = df[(df[col] >= q1) & (df[col] <= q3)]
+        print(f"Chicago: Applied industrial-specific outlier removal (1%-99% range)")
+    
+    elif dataset_type == 'seattle_2015_present':
+        # Seattle: Standard outlier removal
+        for col in numeric_cols:
+            if col in df.columns and df[col].notna().sum() > 10:
+                q1 = df[col].quantile(0.01)
+                q3 = df[col].quantile(0.99)
+                df = df[(df[col] >= q1) & (df[col] <= q3)]
+        print(f"Seattle: Applied standard outlier removal (1%-99% range)")
+    
+    filtered_shape = df.shape[0]
+    removed_count = original_shape - filtered_shape
+    if removed_count > 0:
+        print(f"Removed {removed_count} outlier rows ({removed_count/original_shape*100:.1f}%)")
+    
+    return df
 
 
 def preprocess_data(file_path, test_size=0.2, random_state=42):
     """
-    Enhanced data preprocessing function for individual datasets with improved target detection
+    Enhanced preprocessing with city-specific adaptations for fair comparison
     
     Args:
-        file_path (str): CSV file path
+        file_path (str): Path to the CSV file
         test_size (float): Test set proportion
         random_state (int): Random seed
         
     Returns:
         tuple: (X_train, X_test, y_train, y_test, scaler, feature_names)
     """
-    print(f"Loading data from: {file_path}")
+    print(f"Loading and preprocessing: {file_path}")
     
     # Load data
     df = pd.read_csv(file_path)
@@ -177,42 +370,49 @@ def preprocess_data(file_path, test_size=0.2, random_state=42):
     
     # Identify dataset type
     dataset_type = identify_dataset_type(df, file_path)
-    print(f"Dataset type: {dataset_type}")
+    print(f"Identified as: {dataset_type}")
     
-    # Enhanced target variable detection
+    # Apply city-specific preprocessing
+    df = preprocess_data_city_specific(df, dataset_type)
+    
+    # Find target variable with city-specific logic
     target_col = find_target_variable_enhanced(df, dataset_type)
     
     if target_col is None:
-        print("ERROR: No suitable target variable found!")
+        print(f"ERROR: No suitable target variable found for {dataset_type}")
         print("Available columns:")
         for i, col in enumerate(df.columns):
-            print(f"  {i+1:2d}. {col} ({df[col].dtype})")
-        raise ValueError("No suitable target variable found")
+            non_null_count = df[col].notna().sum()
+            print(f"  {i+1:2d}. {col} ({df[col].dtype}) - {non_null_count} non-null values")
+        raise ValueError(f"No suitable target variable found for {dataset_type}")
     
-    print(f"Using '{target_col}' as target variable")
+    print(f"Using '{target_col}' as target variable for {dataset_type}")
     
     # Separate features and target
     y = df[target_col].copy()
     X = df.drop(columns=[target_col])
     
-    # Remove invalid target values
-    if 'energy' in target_col.lower() or 'ghg' in target_col.lower() or 'emission' in target_col.lower():
+    # Clean target variable with city-specific logic
+    config = get_city_config(dataset_type)
+    if any(keyword in target_col.lower() for keyword in ['eui', 'energy']):
         valid_mask = ~(y.isnull() | (y <= 0))
-    elif 'star' in target_col.lower() or 'score' in target_col.lower():
-        # For scores, keep values between 1-100
+    elif any(keyword in target_col.lower() for keyword in ['star', 'score']):
         valid_mask = ~(y.isnull()) & (y >= 1) & (y <= 100)
     else:
-        # For other metrics, just remove null values
         valid_mask = ~y.isnull()
     
     X = X[valid_mask]
     y = y[valid_mask]
     
-    print(f"After removing invalid targets: {X.shape}")
+    print(f"After target cleaning: {X.shape}")
     print(f"Target range: [{y.min():.2f}, {y.max():.2f}]")
     
-    # Delete irrelevant columns
-    irrelevant_cols = [
+    # Get city-specific irrelevant columns
+    config = get_city_config(dataset_type)
+    city_specific_irrelevant = config['irrelevant_cols']
+    
+    # Combine with general irrelevant columns
+    general_irrelevant_cols = [
         'OSEBuildingID', 'BuildingName', 'PropertyName', 'Address', 'City', 'State',
         'ZipCode', 'CouncilDistrictCode', 'Neighborhood', 'TaxParcelIdentificationNumber',
         'ComplianceStatus', 'Comments', 'DefaultData', 'ListOfAllPropertyUseTypes',
@@ -225,12 +425,15 @@ def preprocess_data(file_path, test_size=0.2, random_state=42):
         'Reported_Address', 'Property_Floor_Area_Buildings_sq_ft'
     ]
     
-    existing_irrelevant = [col for col in irrelevant_cols if col in X.columns]
+    # Combine city-specific and general irrelevant columns
+    all_irrelevant_cols = list(set(general_irrelevant_cols + city_specific_irrelevant))
+    existing_irrelevant = [col for col in all_irrelevant_cols if col in X.columns]
+    
     if existing_irrelevant:
         X = X.drop(columns=existing_irrelevant)
-        print(f"Dropped {len(existing_irrelevant)} irrelevant columns")
+        print(f"Dropped {len(existing_irrelevant)} irrelevant columns (general + city-specific)")
     
-    # Handle categorical variables
+    # Handle categorical variables with city-specific building type standardization
     categorical_cols = X.select_dtypes(include=['object']).columns
     
     for col in categorical_cols:
@@ -238,25 +441,38 @@ def preprocess_data(file_path, test_size=0.2, random_state=42):
             X = X.drop(columns=[col])
             print(f"Dropped {col} - too many unique values")
         else:
+            # Special handling for building type columns
+            building_type_col = config.get('building_type_col', '')
+            if col == building_type_col:
+                # Apply city-specific building type standardization
+                X[col] = standardize_building_types(X[col], dataset_type)
+                print(f"Applied city-specific standardization to {col}")
+            
             # Label encoding
             le = LabelEncoder()
             X[col] = X[col].fillna('Unknown')
             try:
                 X[col] = le.fit_transform(X[col].astype(str))
+                print(f"Encoded categorical column: {col}")
             except Exception as e:
-                print(f"Warning: Could not encode {col}, dropping it")
+                print(f"Warning: Could not encode {col}, dropping it - {e}")
                 X = X.drop(columns=[col])
     
     # Handle missing values
     numerical_cols = X.select_dtypes(include=[np.number]).columns
     if len(numerical_cols) > 0:
+        missing_cols = 0
         for col in numerical_cols:
             if X[col].isnull().sum() > 0:
+                missing_cols += 1
                 median_val = X[col].median()
                 if pd.isna(median_val):
                     X[col] = X[col].fillna(0)
                 else:
                     X[col] = X[col].fillna(median_val)
+        
+        if missing_cols > 0:
+            print(f"Imputed missing values in {missing_cols} numerical columns")
     
     # Remove constant columns
     constant_cols = [col for col in X.columns if X[col].nunique() <= 1]
@@ -291,7 +507,7 @@ def preprocess_data(file_path, test_size=0.2, random_state=42):
         X, y, test_size=test_size, random_state=random_state
     )
     
-    # Standardize
+    # Standardize features
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -302,9 +518,11 @@ def preprocess_data(file_path, test_size=0.2, random_state=42):
     
     feature_names = X_train.columns.tolist()
     
+    print(f"Final preprocessing results for {dataset_type}:")
     print(f"Train set: {X_train_scaled.shape}")
     print(f"Test set: {X_test_scaled.shape}")
     print(f"Target range: [{y.min():.0f}, {y.max():.0f}]")
+    print(f"Features: {len(feature_names)} total")
     
     return X_train_scaled, X_test_scaled, y_train, y_test, scaler, feature_names
 

@@ -11,6 +11,10 @@ import json
 from pathlib import Path
 import pandas as pd
 import warnings
+import logging
+import sys
+import os
+from datetime import datetime
 warnings.filterwarnings('ignore')
 
 
@@ -77,13 +81,13 @@ def check_required_packages():
 
 
 def check_data_files():
-    """Check if required data files exist"""
-    print("\n📁 Checking data files...")
+    """Check if required data files exist for three US cities"""
+    print("\n📁 Checking data files for three major US cities...")
     
     data_files = [
-        "data/2015-building-energy-benchmarking.csv",
-        "data/2016-building-energy-benchmarking.csv", 
-        "data/energy_disclosure_2021_rows.csv"
+        "data/seattle_2015_present.csv",
+        "data/chicago_energy_benchmarking.csv", 
+        "data/washington_dc_energy.csv"
     ]
     
     existing_files = []
@@ -94,7 +98,7 @@ def check_data_files():
             print(f"✅ {file_path}")
             existing_files.append(file_path)
             
-            # Check file size
+            # Check file size and basic structure
             try:
                 df = pd.read_csv(file_path, nrows=1)
                 print(f"   📊 Columns: {len(df.columns)}")
@@ -106,14 +110,17 @@ def check_data_files():
     
     if not existing_files:
         print("\n❌ No data files found!")
-        print("Please ensure at least one dataset is available in the 'data/' directory")
+        print("Please download the datasets and name them as follows:")
+        print("   - Seattle 2015-Present → data/seattle_2015_present.csv")
+        print("   - Chicago Energy Benchmarking → data/chicago_energy_benchmarking.csv")
+        print("   - Washington DC Building Energy → data/washington_dc_energy.csv")
         return False
     elif missing_files:
         print(f"\n⚠️  Missing {len(missing_files)} files, but {len(existing_files)} available")
         print("Project will run with available datasets")
         return True
     else:
-        print("✅ All data files found")
+        print("✅ All data files found for three major US cities")
         return True
 
 
@@ -288,9 +295,56 @@ def generate_project_summary(pipeline_result):
     
     return summary
 
+def setup_logging():
+    """
+    Setup comprehensive logging for the analysis pipeline
+    """
+    # Create logs directory if it doesn't exist
+    os.makedirs("logs", exist_ok=True)
+    
+    # Generate timestamp for log filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"logs/analysis_{timestamp}.log"
+    
+    # Setup logging configuration
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_filename, encoding='utf-8'),  # Save to file
+            logging.StreamHandler(sys.stdout)  # Also display on screen
+        ]
+    )
+    
+    # Create a custom logger
+    logger = logging.getLogger('BuildingEnergyAnalysis')
+    
+    print(f"🔄 Logging enabled - saving to: {log_filename}")
+    logger.info("="*80)
+    logger.info("BUILDING ENERGY PREDICTION ANALYSIS STARTED")
+    logger.info("="*80)
+    
+    return logger
+
+
+
+import logging
+
+def log_print(*args, **kwargs):
+    """
+    Enhanced print function that logs to both console and file
+    """
+    # Convert all arguments to string
+    message = ' '.join(str(arg) for arg in args)
+    
+    # Print to console
+    print(*args, **kwargs)
+    
+    # Log to file
+    logger = logging.getLogger('BuildingEnergyAnalysis')
+    logger.info(message)
 
 def run_individual_analysis_option():
-    """运行独立数据集分析选项 - FIXED VERSION"""
     print_banner("INDIVIDUAL DATASET ANALYSIS")
     print("🎯 This mode analyzes each dataset independently to avoid compatibility issues")
     print("✅ Fixes cross-year negative R² problems") 

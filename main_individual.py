@@ -2,7 +2,8 @@
 Individual Dataset Analysis for Building Energy Prediction
 针对每个数据集进行独立分析，避免数据不兼容问题 - FIXED VERSION
 """
-
+import logging
+from datetime import datetime
 import os
 import sys
 import time
@@ -175,94 +176,216 @@ def train_classification_for_dataset(dataset_name, X_train, y_train):
     except Exception as e:
         print(f"     ❌ Classification setup error: {e}")
 
-def run_individual_analysis():
 
+def generate_fairness_report(results):
+    """
+    Generate a fairness analysis report comparing three cities
+    """
+    print("\n" + "="*80)
+    print("FAIRNESS ANALYSIS REPORT")
     print("="*80)
-    print("INDIVIDUAL DATASET ANALYSIS PIPELINE")
-    print("="*80)
-    print("🎯 Analyzing each dataset independently to avoid compatibility issues")
-    print("✅ This approach eliminates cross-year negative R² problems")
+    
+    print("City-Specific Performance Analysis:")
+    
+    for dataset_name, result in results.items():
+        if result['success']:
+            print(f"\n✅ {dataset_name.upper()}:")
+            print(f"   Status: Successfully analyzed")
+            print(f"   Processing time: {result['time']:.1f} seconds")
+            
+            # Try to read evaluation results
+            try:
+                eval_file = f"outputs/{dataset_name}/model_evaluation_results.csv"
+                if os.path.exists(eval_file):
+                    df = pd.read_csv(eval_file)
+                    best_model = df.loc[df['R2'].idxmax()]
+                    print(f"   Best model: {best_model['Model']}")
+                    print(f"   Best R²: {best_model['R2']:.4f}")
+                    print(f"   Best RMSE: {best_model['RMSE']:.2f}")
+            except Exception as e:
+                print(f"   Could not load detailed results: {e}")
+        else:
+            print(f"\n❌ {dataset_name.upper()}:")
+            print(f"   Status: Analysis failed")
+    
+    print(f"\n📊 FAIRNESS ASSESSMENT:")
+    print(f"Each city has been processed with:")
+    print(f"   ✅ City-specific target variable detection")
+    print(f"   ✅ City-specific data cleaning thresholds")
+    print(f"   ✅ City-specific building type standardization")
+    print(f"   ✅ City-specific outlier removal strategies")
+    
+    return results
+
+def save_analysis_summary(results, total_time):
+    """Save a detailed analysis summary"""
+    
+    logger = logging.getLogger('BuildingEnergyAnalysis')
+    
+    try:
+        summary = {
+            'timestamp': datetime.now().isoformat(),
+            'total_time_seconds': total_time,
+            'total_time_minutes': total_time / 60,
+            'datasets_processed': len(results),
+            'successful_analyses': sum(1 for r in results.values() if r['success']),
+            'failed_analyses': sum(1 for r in results.values() if not r['success']),
+            'detailed_results': results
+        }
+        
+        # Save to JSON file
+        summary_file = f"logs/analysis_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        with open(summary_file, 'w') as f:
+            import json
+            json.dump(summary, f, indent=2, default=str)
+        
+        logger.info(f"📄 Analysis summary saved to: {summary_file}")
+        
+    except Exception as e:
+        logger.error(f"Failed to save analysis summary: {e}")
+
+def setup_logging():
+    """
+    Setup comprehensive logging for the analysis pipeline
+    """
+    # Create logs directory if it doesn't exist
+    os.makedirs("logs", exist_ok=True)
+    
+    # Generate timestamp for log filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = f"logs/analysis_{timestamp}.log"
+    
+    # Setup logging configuration
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_filename, encoding='utf-8'),  # Save to file
+            logging.StreamHandler(sys.stdout)  # Also display on screen
+        ]
+    )
+    
+    # Create a custom logger
+    logger = logging.getLogger('BuildingEnergyAnalysis')
+    
+    print(f"🔄 Logging enabled - saving to: {log_filename}")
+    logger.info("="*80)
+    logger.info("BUILDING ENERGY PREDICTION ANALYSIS STARTED")
+    logger.info("="*80)
+    
+    return logger        
+
+def run_individual_analysis():
+    """Enhanced version with comprehensive logging"""
+    
+    # Setup logging at the start
+    logger = setup_logging()
+    
+    logger.info("🎯 Starting individual dataset analysis for three major US cities")
+    logger.info("✅ Seattle, Chicago, and Washington DC energy benchmarking data")
 
     datasets = {
-        'seattle_2015': 'data/2015-building-energy-benchmarking.csv',
-        'seattle_2016': 'data/2016-building-energy-benchmarking.csv',
-        'nyc_2021': 'data/energy_disclosure_2021_rows.csv'
+        'seattle_2015_present': 'data/seattle_2015_present.csv',
+        'chicago_energy': 'data/chicago_energy_benchmarking.csv',
+        'washington_dc': 'data/washington_dc_energy.csv'
     }
     
     results = {}
     total_start_time = time.time()
 
+    # Log dataset availability
     available_datasets = {}
     for dataset_name, file_path in datasets.items():
         if os.path.exists(file_path):
             available_datasets[dataset_name] = file_path
-            print(f"✅ Found: {dataset_name} -> {file_path}")
+            logger.info(f"✅ Found: {dataset_name} -> {file_path}")
         else:
-            print(f"❌ Missing: {dataset_name} -> {file_path}")
+            logger.warning(f"❌ Missing: {dataset_name} -> {file_path}")
     
     if not available_datasets:
-        print("❌ No datasets found! Please ensure data files are in the 'data/' directory")
+        logger.error("❌ No datasets found! Please ensure data files are in the 'data/' directory")
         return {}
     
-    print(f"\n🚀 Processing {len(available_datasets)} available datasets...")
+    logger.info(f"🚀 Processing {len(available_datasets)} available major US cities...")
     
+    # Process each dataset with detailed logging
     for dataset_name, file_path in available_datasets.items():
+        logger.info(f"\n{'='*60}")
+        logger.info(f"PROCESSING {dataset_name.upper()} DATASET")
+        logger.info(f"{'='*60}")
+        
         start_time = time.time()
-        success = process_individual_dataset(dataset_name, file_path)
-        end_time = time.time()
         
-        results[dataset_name] = {
-            'success': success,
-            'time': end_time - start_time,
-            'file_path': file_path
-        }
-        
-        print(f"\n📊 {dataset_name} Summary:")
-        print(f"   Status: {'✅ Success' if success else '❌ Failed'}")
-        print(f"   Time: {end_time - start_time:.1f} seconds")
+        try:
+            success = process_individual_dataset(dataset_name, file_path)
+            end_time = time.time()
+            
+            results[dataset_name] = {
+                'success': success,
+                'time': end_time - start_time,
+                'file_path': file_path
+            }
+            
+            logger.info(f"📊 {dataset_name} Summary:")
+            logger.info(f"   Status: {'✅ Success' if success else '❌ Failed'}")
+            logger.info(f"   Processing time: {end_time - start_time:.1f} seconds")
+            
+            if success:
+                logger.info(f"   ✅ {dataset_name} analysis completed successfully!")
+            else:
+                logger.error(f"   ❌ {dataset_name} analysis failed!")
+                
+        except Exception as e:
+            end_time = time.time()
+            logger.error(f"❌ Exception in {dataset_name}: {str(e)}")
+            results[dataset_name] = {
+                'success': False,
+                'time': end_time - start_time,
+                'file_path': file_path,
+                'error': str(e)
+            }
     
+    # Final summary with detailed logging
     total_end_time = time.time()
     total_time = total_end_time - total_start_time
-
-    print("\n" + "="*80)
-    print("INDIVIDUAL ANALYSIS COMPLETED")
-    print("="*80)
+    
+    logger.info("\n" + "="*80)
+    logger.info("INDIVIDUAL ANALYSIS COMPLETED")
+    logger.info("="*80)
     
     successful_datasets = [name for name, result in results.items() if result['success']]
     failed_datasets = [name for name, result in results.items() if not result['success']]
     
-    print(f"📊 Results Summary:")
-    print(f"   Total time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
-    print(f"   Successful datasets: {len(successful_datasets)}/{len(available_datasets)}")
-    print(f"   Available datasets: {len(available_datasets)}/{len(datasets)}")
+    logger.info(f"📊 Final Results Summary:")
+    logger.info(f"   Total execution time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
+    logger.info(f"   Successful datasets: {len(successful_datasets)}/{len(available_datasets)}")
+    logger.info(f"   Available datasets: {len(available_datasets)}/{len(datasets)}")
     
     if successful_datasets:
-        print(f"\n🎉 Successfully analyzed:")
+        logger.info(f"🎉 Successfully analyzed cities:")
         for dataset_name in successful_datasets:
             result = results[dataset_name]
-            print(f"   ✅ {dataset_name}: {result['time']:.1f}s")
+            logger.info(f"   ✅ {dataset_name}: {result['time']:.1f}s")
         
-        print(f"\n📁 Results saved in:")
+        logger.info(f"📁 Results saved in:")
         for dataset_name in successful_datasets:
-            print(f"   📂 outputs/{dataset_name}/")
-        
-        print(f"\n🌐 Start the web dashboard to view detailed results!")
-        print(f"   Command: python run_project.py --dashboard")
+            logger.info(f"   📂 outputs/{dataset_name}/")
     
     if failed_datasets:
-        print(f"\n⚠️  Failed datasets:")
+        logger.warning(f"⚠️  Failed datasets:")
         for dataset_name in failed_datasets:
             result = results[dataset_name]
-            print(f"   ❌ {dataset_name}: Check error messages above")
+            error_msg = result.get('error', 'Unknown error')
+            logger.error(f"   ❌ {dataset_name}: {error_msg}")
     
-    if not successful_datasets:
-        print(f"\n❌ No datasets were successfully analyzed")
-        print(f"Please check:")
-        print(f"   📁 Data file paths and formats")
-        print(f"   🐍 Python dependencies (run system check)")
-        print(f"   📋 Error messages above for specific issues")
+    # Save analysis summary
+    save_analysis_summary(results, total_time)
+    
+    logger.info("🏁 Analysis pipeline completed!")
+    logger.info("="*80)
     
     return results
+
 
 
 if __name__ == "__main__":

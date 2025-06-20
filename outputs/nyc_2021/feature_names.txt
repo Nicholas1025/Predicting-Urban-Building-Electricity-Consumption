@@ -1,2 +1,0 @@
-DOF_Gross_Square_Footage
-Energy_Efficiency_Grade

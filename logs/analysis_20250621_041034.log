@@ -1,0 +1,29 @@
+2025-06-21 04:10:34,667 - INFO - ================================================================================
+2025-06-21 04:10:34,668 - INFO - BUILDING ENERGY PREDICTION ANALYSIS STARTED
+2025-06-21 04:10:34,669 - INFO - ================================================================================
+2025-06-21 04:10:34,669 - INFO - 🎯 Starting individual dataset analysis for three major US cities
+2025-06-21 04:10:34,670 - INFO - ✅ Seattle, Chicago, and Washington DC energy benchmarking data
+2025-06-21 04:10:34,670 - INFO - ✅ Found: seattle_2015_present -> data/seattle_2015_present.csv
+2025-06-21 04:10:34,671 - INFO - ✅ Found: chicago_energy -> data/chicago_energy_benchmarking.csv
+2025-06-21 04:10:34,672 - INFO - ✅ Found: washington_dc -> data/washington_dc_energy.csv
+2025-06-21 04:10:34,673 - INFO - 🚀 Processing 3 available major US cities...
+2025-06-21 04:10:34,673 - INFO - 
+============================================================
+2025-06-21 04:10:34,673 - INFO - PROCESSING SEATTLE_2015_PRESENT DATASET
+2025-06-21 04:10:34,674 - INFO - ============================================================
+2025-06-21 04:10:37,694 - INFO - 📊 seattle_2015_present Summary:
+2025-06-21 04:10:37,694 - INFO -    Status: ❌ Failed
+2025-06-21 04:10:37,694 - INFO -    Processing time: 3.0 seconds
+2025-06-21 04:10:37,695 - ERROR -    ❌ seattle_2015_present analysis failed!
+2025-06-21 04:10:37,695 - INFO - 
+============================================================
+2025-06-21 04:10:37,695 - INFO - PROCESSING CHICAGO_ENERGY DATASET
+2025-06-21 04:10:37,695 - INFO - ============================================================
+2025-06-21 04:10:38,689 - INFO - 📊 chicago_energy Summary:
+2025-06-21 04:10:38,689 - INFO -    Status: ❌ Failed
+2025-06-21 04:10:38,689 - INFO -    Processing time: 1.0 seconds
+2025-06-21 04:10:38,689 - ERROR -    ❌ chicago_energy analysis failed!
+2025-06-21 04:10:38,689 - INFO - 
+============================================================
+2025-06-21 04:10:38,690 - INFO - PROCESSING WASHINGTON_DC DATASET
+2025-06-21 04:10:38,690 - INFO - ============================================================

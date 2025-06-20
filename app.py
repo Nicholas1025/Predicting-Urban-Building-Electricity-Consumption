@@ -11,7 +11,7 @@ import json
 app = Flask(__name__)
 
 # 定义数据集
-DATASETS = ['seattle_2015', 'seattle_2016', 'nyc_2021']
+DATASETS = ['seattle_2015_present', 'chicago_energy', 'washington_dc']
 
 @app.route('/')
 def index():
