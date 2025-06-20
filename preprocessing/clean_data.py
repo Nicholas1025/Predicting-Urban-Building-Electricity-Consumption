@@ -72,117 +72,73 @@ def identify_dataset_type(df, file_path):
 def find_target_variable_enhanced(df, dataset_type=None):
     """
     Enhanced target variable detection with NYC 2021 specific handling
+    FIXED VERSION - 确保对所有数据集都能正确工作
     """
     print("Enhanced target variable detection...")
     print(f"Dataset type: {dataset_type}")
     print(f"Available columns: {len(df.columns)}")
     
-    # Show columns for debugging
-    if len(df.columns) <= 10:
-        print("All columns:")
-        for i, col in enumerate(df.columns, 1):
-            print(f"  {i:2d}. {col}")
-    else:
-        print("First 10 columns:")
-        for i, col in enumerate(df.columns[:10], 1):
-            print(f"  {i:2d}. {col}")
-    
-    # NYC 2021 SPECIFIC HANDLING - Check Energy Star Score first
     if 'Energy_Star_1-100_Score' in df.columns:
         valid_count = df['Energy_Star_1-100_Score'].notna().sum()
-        if valid_count > 10:  # Lower threshold for smaller dataset
+        if valid_count > 10:  # 降低阈值适应小数据集
             print(f"✓ Found NYC 2021 target: Energy_Star_1-100_Score (with {valid_count} valid values)")
             return 'Energy_Star_1-100_Score'
     
-    # Define target patterns by dataset type
     if dataset_type == 'nyc_2021':
-        # NYC 2021 specific patterns (smaller dataset, different structure)
+        min_valid_threshold = 10  
         energy_patterns = [
             'Energy_Star_1-100_Score',
-            'DOF_Gross_Square_Footage',  # Fallback option
-            'Energy_Efficiency_Grade'   # Could be used for classification
+            'DOF_Gross_Square_Footage',  
         ]
-        min_valid_threshold = 10  # Lower threshold for small dataset
     else:
-        # Standard patterns for Seattle datasets
+        min_valid_threshold = 50  # Seattle 数据集较大
         energy_patterns = [
-            # Standard patterns
             'SiteEnergyUse', 'SiteEnergyUse(kBtu)', 'SiteEnergyUseWN(kBtu)', 
             'SourceEUI(kBtu/sf)', 'SiteEUI(kBtu/sf)',
             'TotalGHGEmissions', 'ENERGYSTARScore',
-            
-            # NYC-specific patterns (for larger NYC datasets)
-            'Site_EUI_kBtu_ft2', 'Source_EUI_kBtu_ft2',
-            'Weather_Normalized_Site_EUI_kBtu_ft2',
-            'Weather_Normalized_Source_EUI_kBtu_ft2',
-            'Site_Energy_Use_kBtu', 'Weather_Normalized_Site_Energy_Use_kBtu',
-            'Total_GHG_Emissions_Metric_Tons_CO2e',
-            'Weather_Normalized_Site_Natural_Gas_Use_therms',
-            'Weather_Normalized_Site_Electricity_kWh',
-            'ENERGY_STAR_Score',
-            
-            # Alternative naming conventions
             'site_energy_use', 'source_energy_use',
-            'site_eui', 'source_eui',
-            'energy_use_intensity', 'energy_consumption',
-            'total_energy', 'annual_energy_use',
-            'electricity_use', 'natural_gas_use',
-            'ghg_emissions', 'co2_emissions',
-            'energy_star_score', 'energy_rating'
         ]
-        min_valid_threshold = 50  # Standard threshold for larger datasets
     
     print(f"Using minimum valid threshold: {min_valid_threshold}")
-    
-    # 1. Direct pattern matching
-    print("Checking primary patterns...")
+
     for pattern in energy_patterns:
         if pattern in df.columns:
             valid_count = df[pattern].notna().sum()
             if valid_count >= min_valid_threshold:
                 print(f"✓ Found target variable: {pattern} (with {valid_count} valid values)")
                 return pattern
-    
-    # 2. Case-insensitive search
-    print("Trying case-insensitive search...")
+
     df_columns_lower = [col.lower() for col in df.columns]
-    
     for pattern in energy_patterns:
         pattern_lower = pattern.lower()
         for i, col_lower in enumerate(df_columns_lower):
-            if pattern_lower == col_lower:  # Exact match (case-insensitive)
+            if pattern_lower == col_lower:
                 actual_col = df.columns[i]
                 valid_count = df[actual_col].notna().sum()
                 if valid_count >= min_valid_threshold:
-                    print(f"✓ Found target variable (case-insensitive): {actual_col} (with {valid_count} valid values)")
+                    print(f"✓ Found target variable (case-insensitive): {actual_col}")
                     return actual_col
-    
-    # 3. Partial matching for energy-related terms
-    print("Trying partial matching...")
-    energy_keywords = ['energy', 'eui', 'kbtu', 'ghg', 'emission', 'star', 'consumption', 'use']
+
+    energy_keywords = ['energy', 'eui', 'kbtu', 'ghg', 'emission', 'star', 'consumption']
     
     for col in df.columns:
         col_lower = col.lower()
         if any(keyword in col_lower for keyword in energy_keywords):
-            if df[col].dtype in ['int64', 'float64']:  # Numerical column
+            if df[col].dtype in ['int64', 'float64']:
                 valid_count = df[col].notna().sum()
                 if valid_count >= min_valid_threshold:
-                    # Additional check for reasonable values
                     try:
                         min_val = df[col].min()
                         max_val = df[col].max()
                         if pd.notna(min_val) and pd.notna(max_val) and max_val > min_val:
-                            print(f"✓ Found potential target (partial): {col} (with {valid_count} valid values)")
+                            print(f"✓ Found potential target (partial): {col}")
                             return col
                     except:
                         continue
-    
-    # 4. Last resort: find any numerical column with sufficient data
+
     print("Looking for any suitable numerical column...")
     numerical_cols = df.select_dtypes(include=[np.number]).columns
-    
-    # Filter out obvious ID and coordinate columns
-    exclude_keywords = ['id', 'bbl', 'bin', 'lat', 'lon', 'x_coord', 'y_coord', 'zip', 'year', 'floor']
+    exclude_keywords = ['id', 'bbl', 'bin', 'lat', 'lon', 'x_coord', 'y_coord', 'zip', 'year']
     
     for col in numerical_cols:
         col_lower = col.lower()
@@ -192,29 +148,12 @@ def find_target_variable_enhanced(df, dataset_type=None):
                 try:
                     variance = df[col].var()
                     if pd.notna(variance) and variance > 0:
-                        print(f"✓ Found fallback target: {col} (with {valid_count} valid values)")
+                        print(f"✓ Found fallback target: {col}")
                         return col
                 except:
                     continue
     
-    # 5. Show available columns for debugging
     print("❌ No suitable target variable found!")
-    print(f"\nAvailable numerical columns (threshold: {min_valid_threshold}):")
-    numerical_cols = df.select_dtypes(include=[np.number]).columns
-    
-    for i, col in enumerate(numerical_cols, 1):
-        try:
-            valid_count = df[col].notna().sum()
-            if df[col].dtype in ['int64', 'float64']:
-                try:
-                    min_val = df[col].min()
-                    max_val = df[col].max()
-                    print(f"  {i:2d}. {col}: {valid_count} valid, range [{min_val}, {max_val}]")
-                except:
-                    print(f"  {i:2d}. {col}: {valid_count} valid values")
-        except:
-            print(f"  {i:2d}. {col}: error reading")
-    
     return None
 
 

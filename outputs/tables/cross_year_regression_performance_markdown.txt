@@ -1,7 +1,0 @@
-# Cross-Year Regression Model Performance
-
-| Model         |   2021 R² |   Mean R² |   Std R² |
-|:--------------|----------:|----------:|---------:|
-| Random Forest |   -202840 |   -202840 |      nan |
-| SVR           |   -202286 |   -202286 |      nan |
-| XGBoost       |   -200923 |   -200923 |      nan |

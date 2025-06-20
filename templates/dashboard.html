@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ML Analysis Dashboard</title>
+    <title>Individual Dataset Analysis Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -32,77 +32,6 @@
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
-        }
-
-        /* Animated background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(0, 170, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 60%, rgba(170, 0, 255, 0.1) 0%, transparent 50%);
-            z-index: -1;
-            animation: backgroundPulse 10s ease-in-out infinite alternate;
-        }
-
-        @keyframes backgroundPulse {
-            0% { opacity: 0.3; }
-            100% { opacity: 0.7; }
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--card-bg) 100%);
-            border-bottom: 1px solid var(--border-color);
-            padding: 2rem 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.1), transparent);
-            animation: headerSweep 3s ease-in-out infinite;
-        }
-
-        @keyframes headerSweep {
-            0% { left: -100%; }
-            100% { left: 100%; }
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 300;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(45deg, var(--accent-color), var(--accent-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            font-weight: 300;
         }
 
         /* Navigation */
@@ -151,35 +80,91 @@
             color: var(--accent-color);
         }
 
-        /* Main container */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 3rem 2rem;
-        }
-
-        /* Section headers */
-        .section-header {
-            text-align: center;
-            margin: 4rem 0 2rem 0;
-            padding: 2rem 0;
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--card-bg) 100%);
             border-bottom: 1px solid var(--border-color);
+            padding: 2rem 0;
+            text-align: center;
         }
 
-        .section-title {
-            font-size: 2rem;
+        .header h1 {
+            font-size: 2.5rem;
             font-weight: 300;
+            margin-bottom: 0.5rem;
             background: linear-gradient(45deg, var(--accent-color), var(--accent-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 0.5rem;
         }
 
-        .section-subtitle {
+        .header p {
             color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* Dataset Selector */
+        .dataset-selector {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .selector-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .dataset-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
             font-size: 1rem;
         }
+
+        .dataset-btn:hover {
+            border-color: var(--accent-color);
+            background: var(--hover-glow);
+        }
+
+        .dataset-btn.active {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+            color: var(--primary-bg);
+        }
+
+        /* Main container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem 3rem 2rem;
+        }
+
+        /* Status indicator */
+        .dataset-status {
+            text-align: center;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-icon.success { color: var(--accent-color); }
+        .status-icon.warning { color: var(--accent-orange); }
+        .status-icon.error { color: #ff4444; }
 
         /* Grid layout */
         .dashboard-grid {
@@ -193,10 +178,6 @@
             grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
         }
 
-        .dashboard-grid.three-column {
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        }
-
         /* Card styles */
         .chart-card {
             background: var(--card-bg);
@@ -208,26 +189,10 @@
             transition: all 0.3s ease;
         }
 
-        .chart-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--accent-color), var(--accent-blue), var(--accent-purple));
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
         .chart-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             border-color: var(--accent-color);
-        }
-
-        .chart-card:hover::before {
-            opacity: 1;
         }
 
         .chart-header {
@@ -277,49 +242,7 @@
             justify-content: center;
             color: var(--text-secondary);
             font-size: 1rem;
-        }
-
-        /* Model status indicators */
-        .model-status {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .status-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 1.5rem;
             text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .status-card:hover {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 20px var(--hover-glow);
-        }
-
-        .status-icon {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .status-card.xgboost .status-icon { color: var(--accent-color); }
-        .status-card.random-forest .status-icon { color: var(--accent-blue); }
-        .status-card.svr .status-icon { color: var(--accent-purple); }
-        .status-card.classification .status-icon { color: var(--accent-orange); }
-
-        .status-title {
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .status-description {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
         }
 
         /* Modal styles */
@@ -372,15 +295,42 @@
             color: var(--accent-color);
         }
 
-        /* Error handling for missing images */
-        .chart-error {
-            color: var(--text-secondary);
-            font-style: italic;
-            text-align: center;
+        /* Results table */
+        .results-table {
+            background: var(--card-bg);
+            border-radius: 12px;
             padding: 2rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+        }
+
+        .results-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-table th {
             background: var(--secondary-bg);
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* Debug info */
+        .debug-info {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            margin: 1rem 0;
             border-radius: 8px;
-            border: 1px dashed var(--border-color);
+            font-family: monospace;
+            font-size: 0.9rem;
+            display: none;
         }
 
         /* Responsive design */
@@ -389,44 +339,17 @@
                 grid-template-columns: 1fr;
             }
             
-            .dashboard-grid.two-column,
-            .dashboard-grid.three-column {
+            .dashboard-grid.two-column {
                 grid-template-columns: 1fr;
             }
             
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .nav-content {
+            .selector-buttons {
                 flex-direction: column;
-                gap: 1rem;
             }
             
-            .nav-links {
-                gap: 1rem;
+            .dataset-btn {
+                width: 100%;
             }
-        }
-
-        /* Loading animation */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .loading {
-            animation: pulse 2s infinite;
-        }
-
-        /* Success indicators */
-        .success-indicator {
-            color: var(--accent-color);
-            margin-left: 0.5rem;
-        }
-
-        .warning-indicator {
-            color: var(--accent-orange);
-            margin-left: 0.5rem;
         }
     </style>
 </head>
@@ -440,97 +363,134 @@
             <ul class="nav-links">
                 <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
                 <li><a href="/dashboard"><i class="fas fa-chart-line"></i> Analytics</a></li>
-                <li><a href="#regression"><i class="fas fa-chart-scatter"></i> Regression</a></li>
-                <li><a href="#classification"><i class="fas fa-tags"></i> Classification</a></li>
-                <li><a href="#cross-year"><i class="fas fa-calendar-alt"></i> Cross-Year</a></li>
+                <li><a href="#" onclick="toggleDebugInfo()"><i class="fas fa-bug"></i> Debug</a></li>
             </ul>
         </div>
     </nav>
 
     <!-- Header -->
     <header class="header">
-        <div class="header-content">
-            <h1><i class="fas fa-robot"></i> Machine Learning Analysis Dashboard</h1>
-            <p>Comprehensive Building Energy Prediction Model Performance</p>
-        </div>
+        <h1><i class="fas fa-building"></i> Individual Dataset Analysis Dashboard</h1>
+        <p>Independent Analysis Results for Building Energy Prediction</p>
     </header>
+
+    <!-- Dataset Selector -->
+    <div class="dataset-selector">
+        <div class="selector-buttons">
+            <button class="dataset-btn active" onclick="selectDataset('seattle_2015')">
+                <i class="fas fa-city"></i> Seattle 2015
+            </button>
+            <button class="dataset-btn" onclick="selectDataset('seattle_2016')">
+                <i class="fas fa-city"></i> Seattle 2016  
+            </button>
+            <button class="dataset-btn" onclick="selectDataset('nyc_2021')">
+                <i class="fas fa-building"></i> NYC 2021
+            </button>
+        </div>
+    </div>
 
     <!-- Main container -->
     <div class="container">
-        <!-- Model Status Overview -->
-        <div class="model-status">
-            <div class="status-card xgboost">
-                <div class="status-icon">
-                    <i class="fas fa-tree"></i>
-                </div>
-                <div class="status-title">XGBoost</div>
-                <div class="status-description">Gradient boosting framework for regression & classification</div>
-            </div>
-            <div class="status-card random-forest">
-                <div class="status-icon">
-                    <i class="fas fa-seedling"></i>
-                </div>
-                <div class="status-title">Random Forest</div>
-                <div class="status-description">Ensemble learning method with multiple decision trees</div>
-            </div>
-            <div class="status-card svr">
-                <div class="status-icon">
-                    <i class="fas fa-vector-square"></i>
-                </div>
-                <div class="status-title">Support Vector</div>
-                <div class="status-description">Regression & classification with kernel methods</div>
-            </div>
-            <div class="status-card classification">
-                <div class="status-icon">
-                    <i class="fas fa-tags"></i>
-                </div>
-                <div class="status-title">Classification</div>
-                <div class="status-description">Energy efficiency categorization models</div>
-            </div>
+        <!-- Debug Info -->
+        <div class="debug-info" id="debugInfo">
+            <h4>🐛 Debug Information</h4>
+            <div id="debugContent">Loading debug info...</div>
         </div>
 
-        <!-- Regression Analysis Section -->
-        <div class="section-header" id="regression">
-            <h2 class="section-title"><i class="fas fa-chart-scatter"></i> Regression Analysis</h2>
-            <p class="section-subtitle">Energy consumption prediction performance metrics</p>
+        <!-- Dataset Status -->
+        <div class="dataset-status" id="datasetStatus">
+            <div class="status-icon success">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="status-title">Loading Dataset...</div>
+            <div class="status-description">Please wait while we load the analysis results.</div>
         </div>
 
-        <div class="dashboard-grid">
-            <!-- Predicted vs Actual -->
+        <!-- Results Table -->
+        <div class="results-table" id="resultsTable" style="display: none;">
+            <h3><i class="fas fa-trophy"></i> Model Performance Results</h3>
+            <table id="performanceTable">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>R² Score</th>
+                        <th>RMSE</th>
+                        <th>MAE</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="dashboard-grid" id="chartsGrid">
+            <!-- Model Comparison -->
             <div class="chart-card">
                 <div class="chart-header">
-                    <h3 class="chart-title">Predicted vs Actual Comparison</h3>
-                    <i class="fas fa-crosshairs chart-icon"></i>
+                    <h3 class="chart-title">Model Performance Comparison</h3>
+                    <i class="fas fa-chart-bar chart-icon"></i>
                 </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/predicted_vs_actual_all_models.png')">
-                    <img src="/outputs/charts/predicted_vs_actual_all_models.png"
-                         alt="Predicted vs Actual Chart"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="chart-content" onclick="openModal(getCurrentChartPath('model_comparison_metrics.png'))">
+                    <img id="modelComparisonChart" class="chart-img" alt="Model Comparison Chart">
                     <div class="chart-placeholder" style="display:none;">
                         <div>
-                            <i class="fas fa-chart-scatter" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run evaluation pipeline
+                            <i class="fas fa-chart-bar" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Chart not available<br>
+                            <small>Run analysis first or check file paths</small>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Model Comparison -->
+            <!-- Predicted vs Actual -->
             <div class="chart-card">
                 <div class="chart-header">
-                    <h3 class="chart-title">Model Performance Metrics</h3>
-                    <i class="fas fa-chart-bar chart-icon"></i>
+                    <h3 class="chart-title">Predicted vs Actual</h3>
+                    <i class="fas fa-crosshairs chart-icon"></i>
                 </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/model_comparison_metrics.png')">
-                    <img src="/outputs/charts/model_comparison_metrics.png"
-                         alt="Model Performance Chart"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="chart-content" onclick="openModal(getCurrentChartPath('predicted_vs_actual_all_models.png'))">
+                    <img id="predictedActualChart" class="chart-img" alt="Predicted vs Actual Chart">
                     <div class="chart-placeholder" style="display:none;">
                         <div>
-                            <i class="fas fa-chart-bar" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run evaluation pipeline
+                            <i class="fas fa-crosshairs" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Chart not available<br>
+                            <small>Run analysis first or check file paths</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Importance XGBoost -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">XGBoost Feature Importance</h3>
+                    <i class="fas fa-tree chart-icon"></i>
+                </div>
+                <div class="chart-content" onclick="openModal(getCurrentChartPath('feature_importance_xgb.png'))">
+                    <img id="xgbFeatureChart" class="chart-img" alt="XGBoost Feature Importance">
+                    <div class="chart-placeholder" style="display:none;">
+                        <div>
+                            <i class="fas fa-tree" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Chart not available<br>
+                            <small>Run XGBoost training first</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Importance Random Forest -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">Random Forest Feature Importance</h3>
+                    <i class="fas fa-seedling chart-icon"></i>
+                </div>
+                <div class="chart-content" onclick="openModal(getCurrentChartPath('feature_importance_rf.png'))">
+                    <img id="rfFeatureChart" class="chart-img" alt="Random Forest Feature Importance">
+                    <div class="chart-placeholder" style="display:none;">
+                        <div>
+                            <i class="fas fa-seedling" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Chart not available<br>
+                            <small>Run Random Forest training first</small>
                         </div>
                     </div>
                 </div>
@@ -542,288 +502,31 @@
                     <h3 class="chart-title">Residual Analysis</h3>
                     <i class="fas fa-wave-square chart-icon"></i>
                 </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/residuals_analysis.png')">
-                    <img src="/outputs/charts/residuals_analysis.png"
-                         alt="Residual Analysis Chart"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="chart-content" onclick="openModal(getCurrentChartPath('residuals_analysis.png'))">
+                    <img id="residualChart" class="chart-img" alt="Residual Analysis">
                     <div class="chart-placeholder" style="display:none;">
                         <div>
                             <i class="fas fa-wave-square" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run evaluation pipeline
+                            Chart not available<br>
+                            <small>Run evaluation pipeline first</small>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Feature Importance Section -->
-        <div class="dashboard-grid">
-            <!-- XGBoost Feature Importance -->
+            <!-- Classification Results (if available) -->
             <div class="chart-card">
                 <div class="chart-header">
-                    <h3 class="chart-title">XGBoost Feature Importance</h3>
-                    <i class="fas fa-tree chart-icon"></i>
+                    <h3 class="chart-title">Classification Performance</h3>
+                    <i class="fas fa-tags chart-icon"></i>
                 </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/feature_importance_xgb.png')">
-                    <img src="/outputs/charts/feature_importance_xgb.png"
-                         alt="XGBoost Feature Importance"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="chart-content" onclick="openModal(getCurrentChartPath('classification_metrics_comparison.png'))">
+                    <img id="classificationChart" class="chart-img" alt="Classification Performance">
                     <div class="chart-placeholder" style="display:none;">
                         <div>
-                            <i class="fas fa-tree" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run XGBoost training
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Random Forest Feature Importance -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Random Forest Feature Importance</h3>
-                    <i class="fas fa-seedling chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/feature_importance_rf.png')">
-                    <img src="/outputs/charts/feature_importance_rf.png"
-                         alt="Random Forest Feature Importance"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-seedling" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run Random Forest training
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tree Depth Analysis -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Tree Depth Analysis</h3>
-                    <i class="fas fa-sitemap chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/tree_depth_analysis_rf.png')">
-                    <img src="/outputs/charts/tree_depth_analysis_rf.png"
-                         alt="Tree Depth Analysis"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-sitemap" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run Random Forest training
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Support Vector Analysis Section -->
-        <div class="dashboard-grid two-column">
-            <!-- Support Vector Analysis -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Support Vector Analysis</h3>
-                    <i class="fas fa-vector-square chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/support_vectors_analysis_svr.png')">
-                    <img src="/outputs/charts/support_vectors_analysis_svr.png"
-                         alt="Support Vector Analysis"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-vector-square" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run SVR training
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Kernel Analysis -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">SVR Kernel Analysis</h3>
-                    <i class="fas fa-adjust chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/kernel_analysis_svr.png')">
-                    <img src="/outputs/charts/kernel_analysis_svr.png"
-                         alt="Kernel Analysis"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-adjust" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run SVR training
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Classification Analysis Section -->
-        <div class="section-header" id="classification">
-            <h2 class="section-title"><i class="fas fa-tags"></i> Classification Analysis</h2>
-            <p class="section-subtitle">Energy efficiency categorization model performance</p>
-        </div>
-
-        <div class="dashboard-grid">
-            <!-- Classification Metrics Comparison -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Classification Performance Comparison</h3>
-                    <i class="fas fa-chart-bar chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/classification_metrics_comparison.png')">
-                    <img src="/outputs/charts/classification_metrics_comparison.png"
-                         alt="Classification Metrics Comparison"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-chart-bar" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run classification training
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Confusion Matrices -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Confusion Matrices</h3>
-                    <i class="fas fa-th chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/confusion_matrices_classification.png')">
-                    <img src="/outputs/charts/confusion_matrices_classification.png"
-                         alt="Confusion Matrices"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-th" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run classification training
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cross-Year Analysis Section -->
-        <div class="section-header" id="cross-year">
-            <h2 class="section-title"><i class="fas fa-calendar-alt"></i> Cross-Year Analysis</h2>
-            <p class="section-subtitle">Temporal model performance across different years</p>
-        </div>
-
-        <div class="dashboard-grid">
-            <!-- Cross-Year Performance -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Cross-Year Performance Analysis</h3>
-                    <i class="fas fa-chart-line chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/cross_year_performance_analysis.png')">
-                    <img src="/outputs/charts/cross_year_performance_analysis.png"
-                         alt="Cross-Year Performance Analysis"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run cross-year analysis
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Model Stability Analysis -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Model Stability Analysis</h3>
-                    <i class="fas fa-balance-scale chart-icon"></i>
-                </div>
-                <div class="chart-content" onclick="openModal('/outputs/charts/model_stability_analysis.png')">
-                    <img src="/outputs/charts/model_stability_analysis.png"
-                         alt="Model Stability Analysis"
-                         class="chart-img loading"
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div class="chart-placeholder" style="display:none;">
-                        <div>
-                            <i class="fas fa-balance-scale" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                            Chart not available - Run cross-year analysis
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Performance Summary Section -->
-        <div class="section-header">
-            <h2 class="section-title"><i class="fas fa-trophy"></i> Performance Summary</h2>
-            <p class="section-subtitle">Key findings and model comparison overview</p>
-        </div>
-
-        <div class="dashboard-grid three-column">
-            <!-- Best Regression Model -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Best Regression Model</h3>
-                    <i class="fas fa-medal chart-icon"></i>
-                </div>
-                <div class="chart-content">
-                    <div style="text-align: center; padding: 2rem;">
-                        <div style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;">
-                            <i class="fas fa-trophy"></i>
-                        </div>
-                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">
-                            Model Performance
-                        </div>
-                        <div style="color: var(--text-secondary);">
-                            Check outputs/model_evaluation_results.csv for detailed metrics
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Best Classification Model -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Best Classification Model</h3>
-                    <i class="fas fa-star chart-icon"></i>
-                </div>
-                <div class="chart-content">
-                    <div style="text-align: center; padding: 2rem;">
-                        <div style="font-size: 3rem; color: var(--accent-blue); margin-bottom: 1rem;">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">
-                            Classification Accuracy
-                        </div>
-                        <div style="color: var(--text-secondary);">
-                            Check outputs/tables/classification_performance.csv for results
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cross-Year Stability -->
-            <div class="chart-card">
-                <div class="chart-header">
-                    <h3 class="chart-title">Temporal Stability</h3>
-                    <i class="fas fa-clock chart-icon"></i>
-                </div>
-                <div class="chart-content">
-                    <div style="text-align: center; padding: 2rem;">
-                        <div style="font-size: 3rem; color: var(--accent-purple); margin-bottom: 1rem;">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">
-                            Year-over-Year
-                        </div>
-                        <div style="color: var(--text-secondary);">
-                            Check outputs/tables/cross_year_summary.csv for temporal analysis
+                            <i class="fas fa-tags" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            Chart not available<br>
+                            <small>Run classification training first</small>
                         </div>
                     </div>
                 </div>
@@ -842,8 +545,192 @@
     </div>
 
     <script>
+        let currentDataset = 'seattle_2015';
+        let debugMode = false;
+
+        // Debug functionality
+        function toggleDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            debugMode = !debugMode;
+            
+            if (debugMode) {
+                debugDiv.style.display = 'block';
+                loadDebugInfo();
+            } else {
+                debugDiv.style.display = 'none';
+            }
+        }
+
+        async function loadDebugInfo() {
+            const debugContent = document.getElementById('debugContent');
+            
+            try {
+                const response = await fetch('/api/debug/files');
+                const data = await response.json();
+                
+                let html = '<h5>📁 File Structure:</h5>';
+                
+                for (const [dataset, info] of Object.entries(data)) {
+                    html += `<div><strong>${dataset.toUpperCase()}:</strong> ${info.directory_exists ? '✅' : '❌'}</div>`;
+                    
+                    if (info.directory_exists && info.files.length > 0) {
+                        html += '<ul style="margin-left: 20px; margin-bottom: 10px;">';
+                        info.files.forEach(file => {
+                            html += `<li>📄 ${file.relative_path} (${file.size} bytes)</li>`;
+                        });
+                        html += '</ul>';
+                    } else if (info.directory_exists) {
+                        html += '<div style="margin-left: 20px; color: #ff8800;">No files found</div>';
+                    }
+                }
+                
+                debugContent.innerHTML = html;
+                
+            } catch (error) {
+                debugContent.innerHTML = `<div style="color: #ff4444;">Error loading debug info: ${error}</div>`;
+            }
+        }
+
+        // Dataset selection
+        function selectDataset(dataset) {
+            currentDataset = dataset;
+            
+            // Update button states
+            document.querySelectorAll('.dataset-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Load dataset data
+            loadDatasetResults(dataset);
+        }
+
+        // Get current chart path
+        function getCurrentChartPath(filename) {
+            return `/outputs/${currentDataset}/charts/${filename}`;
+        }
+
+        // Load dataset results
+        async function loadDatasetResults(dataset) {
+            const statusDiv = document.getElementById('datasetStatus');
+            const resultsTable = document.getElementById('resultsTable');
+            
+            // Show loading state
+            statusDiv.innerHTML = `
+                <div class="status-icon warning">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+                <div class="status-title">Loading ${dataset.toUpperCase()}...</div>
+                <div class="status-description">Please wait while we fetch the analysis results.</div>
+            `;
+            
+            try {
+                // Fetch dataset results from API
+                const response = await fetch(`/api/dataset/${dataset}/results`);
+                const data = await response.json();
+                
+                console.log(`🔍 API Response for ${dataset}:`, data);
+                
+                if (data.regression && !data.regression.error) {
+                    // Show success status
+                    statusDiv.innerHTML = `
+                        <div class="status-icon success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="status-title">${dataset.toUpperCase()} Analysis Results</div>
+                        <div class="status-description">Analysis completed successfully with ${data.regression.length} models.</div>
+                    `;
+                    
+                    // Populate results table
+                    populateResultsTable(data.regression);
+                    resultsTable.style.display = 'block';
+                } else {
+                    // Show warning status
+                    statusDiv.innerHTML = `
+                        <div class="status-icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="status-title">No Results Available</div>
+                        <div class="status-description">Please run the analysis for ${dataset} first. Click the Debug button to see file structure.</div>
+                    `;
+                    resultsTable.style.display = 'none';
+                }
+                
+                // Update chart sources
+                updateChartSources(dataset);
+                
+            } catch (error) {
+                console.error('Error loading dataset results:', error);
+                statusDiv.innerHTML = `
+                    <div class="status-icon error">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="status-title">Error Loading Data</div>
+                    <div class="status-description">Could not load results for ${dataset}. Error: ${error.message}</div>
+                `;
+                resultsTable.style.display = 'none';
+            }
+        }
+
+        // Populate results table
+        function populateResultsTable(results) {
+            const tbody = document.querySelector('#performanceTable tbody');
+            tbody.innerHTML = '';
+            
+            results.forEach(result => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${result.Model}</strong></td>
+                    <td>${result.R2 ? result.R2.toFixed(4) : 'N/A'}</td>
+                    <td>${result.RMSE ? result.RMSE.toFixed(2) : 'N/A'}</td>
+                    <td>${result.MAE ? result.MAE.toFixed(2) : 'N/A'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Update chart sources with improved error handling
+        function updateChartSources(dataset) {
+            const charts = [
+                { id: 'modelComparisonChart', file: 'model_comparison_metrics.png' },
+                { id: 'predictedActualChart', file: 'predicted_vs_actual_all_models.png' },
+                { id: 'xgbFeatureChart', file: 'feature_importance_xgb.png' },
+                { id: 'rfFeatureChart', file: 'feature_importance_rf.png' },
+                { id: 'residualChart', file: 'residuals_analysis.png' },
+                { id: 'classificationChart', file: 'classification_metrics_comparison.png' }
+            ];
+
+            charts.forEach(chart => {
+                const img = document.getElementById(chart.id);
+                const placeholder = img.nextElementSibling;
+                
+                const newSrc = `/outputs/${dataset}/charts/${chart.file}`;
+                console.log(`🖼️  Testing image: ${newSrc}`);
+                
+                // Reset states
+                img.style.display = 'none';
+                placeholder.style.display = 'flex';
+                
+                // Test if image exists
+                const testImg = new Image();
+                testImg.onload = function() {
+                    console.log(`✅ Image loaded: ${newSrc}`);
+                    img.src = newSrc;
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
+                };
+                testImg.onerror = function() {
+                    console.log(`❌ Image failed: ${newSrc}`);
+                    img.style.display = 'none';
+                    placeholder.style.display = 'flex';
+                };
+                testImg.src = newSrc;
+            });
+        }
+
         // Modal functionality
         function openModal(imageSrc) {
+            console.log(`🖼️  Opening modal with: ${imageSrc}`);
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImage');
             modalImg.src = imageSrc;
@@ -869,52 +756,10 @@
             }
         });
 
-        // Image loading effect
+        // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            const images = document.querySelectorAll('.chart-img');
-            images.forEach(img => {
-                img.onload = function() {
-                    this.classList.remove('loading');
-                };
-            });
-        });
-
-        // Smooth scrolling for navigation
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Check chart availability and update status
-        function checkChartAvailability() {
-            const charts = document.querySelectorAll('.chart-img');
-            let availableCharts = 0;
-            let totalCharts = charts.length;
-
-            charts.forEach(img => {
-                img.addEventListener('load', () => {
-                    availableCharts++;
-                    updateDashboardStatus(availableCharts, totalCharts);
-                });
-            });
-        }
-
-        function updateDashboardStatus(available, total) {
-            // You can add status indicators here if needed
-            console.log(`Charts loaded: ${available}/${total}`);
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            checkChartAvailability();
+            console.log('🚀 Dashboard initialized');
+            loadDatasetResults(currentDataset);
         });
     </script>
 </body>

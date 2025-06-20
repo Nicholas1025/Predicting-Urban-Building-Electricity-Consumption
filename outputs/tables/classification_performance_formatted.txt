@@ -1,8 +1,0 @@
-CLASSIFICATION MODEL PERFORMANCE COMPARISON
-============================================================
-
-Model          Accuracy  Precision  Recall  F1-Score  
-------------------------------------------------------
-XGBoost        0.9821    0.9821     0.9821  0.9821    
-Random Forest  0.9776    0.9776     0.9776  0.9776    
-SVM            0.8733    0.8719     0.8733  0.8720    

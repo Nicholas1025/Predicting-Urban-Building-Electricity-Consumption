@@ -342,7 +342,7 @@ predictions,true_labels,predictions_text,true_labels_text
 0,0,Average,Average
 3,3,Poor,Poor
 1,1,Excellent,Excellent
-0,0,Average,Average
+2,0,Good,Average
 1,1,Excellent,Excellent
 2,2,Good,Good
 3,3,Poor,Poor

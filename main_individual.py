@@ -1,6 +1,6 @@
 """
 Individual Dataset Analysis for Building Energy Prediction
-针对每个数据集进行独立分析，避免数据不兼容问题
+针对每个数据集进行独立分析，避免数据不兼容问题 - FIXED VERSION
 """
 
 import os
@@ -10,11 +10,9 @@ import pandas as pd
 import warnings
 warnings.filterwarnings('ignore')
 
-# 添加当前目录到路径
 sys.path.append('.')
 
 def create_individual_directories(dataset_name):
-    """为每个数据集创建独立的输出目录"""
     directories = [
         f"outputs/{dataset_name}",
         f"outputs/{dataset_name}/charts",
@@ -27,7 +25,6 @@ def create_individual_directories(dataset_name):
         print(f"✓ Created: {directory}")
 
 def process_individual_dataset(dataset_name, file_path):
-    """处理单个数据集"""
     print(f"\n{'='*60}")
     print(f"PROCESSING {dataset_name.upper()} DATASET")
     print(f"{'='*60}")
@@ -37,16 +34,15 @@ def process_individual_dataset(dataset_name, file_path):
         return False
     
     try:
-        # 创建输出目录
         create_individual_directories(dataset_name)
         
-        # 设置环境变量，让子模块知道当前处理的数据集
-        os.environ['CURRENT_DATASET'] = dataset_name
-        os.environ['OUTPUT_PREFIX'] = f"outputs/{dataset_name}"
-        
-        # Step 1: 数据预处理
         print("🔄 Step 1: Data Preprocessing...")
-        from preprocessing.clean_data import preprocess_data
+
+        try:
+            from preprocessing.clean_data import preprocess_data
+        except ImportError as e:
+            print(f"❌ Cannot import preprocessing module: {e}")
+            return False
         
         result = preprocess_data(file_path)
         if result is None:
@@ -54,15 +50,13 @@ def process_individual_dataset(dataset_name, file_path):
             return False
             
         X_train, X_test, y_train, y_test, scaler, feature_names = result
-        
-        # 保存预处理结果到独立文件夹
+
         output_dir = f"outputs/{dataset_name}"
         X_train.to_csv(f"{output_dir}/X_train.csv", index=False)
         X_test.to_csv(f"{output_dir}/X_test.csv", index=False)
         y_train.to_csv(f"{output_dir}/y_train.csv", index=False)
         y_test.to_csv(f"{output_dir}/y_test.csv", index=False)
-        
-        # 保存特征名和scaler
+
         with open(f"{output_dir}/feature_names.txt", "w") as f:
             for name in feature_names:
                 f.write(f"{name}\n")
@@ -74,19 +68,18 @@ def process_individual_dataset(dataset_name, file_path):
         print(f"   Features: {len(feature_names)}")
         print(f"   Train samples: {len(X_train)}")
         print(f"   Test samples: {len(X_test)}")
-        
-        # Step 2: 模型训练
+
         print("\n🤖 Step 2: Model Training...")
         train_models_for_dataset(dataset_name)
-        
-        # Step 3: 模型评估
+
         print("\n📊 Step 3: Model Evaluation...")
         evaluate_models_for_dataset(dataset_name)
-        
-        # Step 4: 分类模型（如果数据足够）
-        if len(X_train) > 500:  # 只有足够数据才做分类
+
+        if len(X_train) > 500:
             print("\n🎯 Step 4: Classification Models...")
             train_classification_for_dataset(dataset_name, X_train, y_train)
+        else:
+            print(f"\n⚠️  Skipping classification for {dataset_name} (insufficient data: {len(X_train)} samples)")
         
         print(f"✅ {dataset_name} analysis completed successfully!")
         return True
@@ -96,88 +89,100 @@ def process_individual_dataset(dataset_name, file_path):
         import traceback
         traceback.print_exc()
         return False
-    finally:
-        # 清理环境变量
-        os.environ.pop('CURRENT_DATASET', None)
-        os.environ.pop('OUTPUT_PREFIX', None)
 
 def train_models_for_dataset(dataset_name):
-    """为单个数据集训练模型"""
-    
-    # 修改工作目录，让现有的训练脚本使用正确的路径
-    original_dir = os.getcwd()
-    output_dir = f"outputs/{dataset_name}"
+    """为单个数据集训练模型 - FIXED VERSION"""
     
     try:
-        # 临时修改输出路径环境变量
-        os.environ['MODEL_OUTPUT_DIR'] = f"{output_dir}/models"
-        os.environ['CHART_OUTPUT_DIR'] = f"{output_dir}/charts" 
-        os.environ['PRED_OUTPUT_DIR'] = output_dir
-        
-        # 训练XGBoost
         print("  🚀 Training XGBoost...")
-        from models.train_xgboost_individual import main as train_xgb
-        train_xgb(dataset_name)
-        
-        # 训练Random Forest
+        try:
+            from models.train_xgboost_individual import main as train_xgb
+            train_xgb(dataset_name)
+            print("     ✅ XGBoost completed")
+        except Exception as e:
+            print(f"     ❌ XGBoost failed: {e}")
+
         print("  🌲 Training Random Forest...")
-        from models.train_rf_individual import main as train_rf
-        train_rf(dataset_name)
-        
-        # 训练SVR
+        try:
+            from models.train_rf_individual import main as train_rf
+            train_rf(dataset_name)
+            print("     ✅ Random Forest completed")
+        except Exception as e:
+            print(f"     ❌ Random Forest failed: {e}")
+
         print("  ⚡ Training SVR...")
-        from models.train_svr_individual import main as train_svr
-        train_svr(dataset_name)
+        try:
+            from models.train_svr_individual import main as train_svr
+            train_svr(dataset_name)
+            print("     ✅ SVR completed")
+        except Exception as e:
+            print(f"     ❌ SVR failed: {e}")
         
     except Exception as e:
         print(f"❌ Model training error: {e}")
-    finally:
-        # 恢复环境变量
-        os.environ.pop('MODEL_OUTPUT_DIR', None)
-        os.environ.pop('CHART_OUTPUT_DIR', None) 
-        os.environ.pop('PRED_OUTPUT_DIR', None)
 
 def evaluate_models_for_dataset(dataset_name):
-    """评估单个数据集的模型"""
     try:
-        os.environ['EVAL_OUTPUT_DIR'] = f"outputs/{dataset_name}"
+        print(f"  📊 Evaluating models for {dataset_name}...")
         from evaluation.evaluate_models_individual import main as eval_models
         eval_models(dataset_name)
+        print("     ✅ Evaluation completed")
     except Exception as e:
-        print(f"⚠️  Evaluation error: {e}")
-    finally:
-        os.environ.pop('EVAL_OUTPUT_DIR', None)
+        print(f"     ❌ Evaluation error: {e}")
 
 def train_classification_for_dataset(dataset_name, X_train, y_train):
-    """为单个数据集训练分类模型"""
+
     try:
-        # 创建分类标签
-        from preprocessing.multi_dataset_processor import create_energy_efficiency_labels
-        labels = create_energy_efficiency_labels(y_train)
+        print(f"  🎯 Training classification models for {dataset_name}...")
+
+        import numpy as np
+
+        def create_simple_labels(energy_values):
+            """创建简单的能效标签"""
+            q1 = energy_values.quantile(0.25)
+            q2 = energy_values.quantile(0.50)
+            q3 = energy_values.quantile(0.75)
+            
+            def assign_label(value):
+                if pd.isna(value):
+                    return 'Unknown'
+                elif value <= q1:
+                    return 'Excellent' 
+                elif value <= q2:
+                    return 'Good'
+                elif value <= q3:
+                    return 'Average'
+                else:
+                    return 'Poor' 
+            
+            return energy_values.apply(assign_label)
         
-        # 保存分类数据
+        labels = create_simple_labels(y_train)
+
         output_dir = f"outputs/{dataset_name}"
         X_train.to_csv(f"{output_dir}/unified_features.csv", index=False)
         labels.to_csv(f"{output_dir}/unified_labels.csv", index=False)
         
-        # 训练分类模型
-        os.environ['CLASS_OUTPUT_DIR'] = output_dir
-        from models.train_classification_individual import main as train_class
-        train_class(dataset_name)
+        print(f"     ✓ Classification labels created: {labels.value_counts().to_dict()}")
+
+        try:
+            from models.train_classification_individual import main as train_class
+            train_class(dataset_name)
+            print("     ✅ Classification training completed")
+        except Exception as e:
+            print(f"     ❌ Classification training failed: {e}")
         
     except Exception as e:
-        print(f"⚠️  Classification training error: {e}")
-    finally:
-        os.environ.pop('CLASS_OUTPUT_DIR', None)
+        print(f"     ❌ Classification setup error: {e}")
 
 def run_individual_analysis():
-    """运行独立数据集分析的主函数"""
+
     print("="*80)
     print("INDIVIDUAL DATASET ANALYSIS PIPELINE")
     print("="*80)
     print("🎯 Analyzing each dataset independently to avoid compatibility issues")
-    
-    # 定义数据集
+    print("✅ This approach eliminates cross-year negative R² problems")
+
     datasets = {
         'seattle_2015': 'data/2015-building-energy-benchmarking.csv',
         'seattle_2016': 'data/2016-building-energy-benchmarking.csv',
@@ -186,15 +191,30 @@ def run_individual_analysis():
     
     results = {}
     total_start_time = time.time()
-    
+
+    available_datasets = {}
     for dataset_name, file_path in datasets.items():
+        if os.path.exists(file_path):
+            available_datasets[dataset_name] = file_path
+            print(f"✅ Found: {dataset_name} -> {file_path}")
+        else:
+            print(f"❌ Missing: {dataset_name} -> {file_path}")
+    
+    if not available_datasets:
+        print("❌ No datasets found! Please ensure data files are in the 'data/' directory")
+        return {}
+    
+    print(f"\n🚀 Processing {len(available_datasets)} available datasets...")
+    
+    for dataset_name, file_path in available_datasets.items():
         start_time = time.time()
         success = process_individual_dataset(dataset_name, file_path)
         end_time = time.time()
         
         results[dataset_name] = {
             'success': success,
-            'time': end_time - start_time
+            'time': end_time - start_time,
+            'file_path': file_path
         }
         
         print(f"\n📊 {dataset_name} Summary:")
@@ -203,31 +223,47 @@ def run_individual_analysis():
     
     total_end_time = time.time()
     total_time = total_end_time - total_start_time
-    
-    # 最终总结
+
     print("\n" + "="*80)
     print("INDIVIDUAL ANALYSIS COMPLETED")
     print("="*80)
     
     successful_datasets = [name for name, result in results.items() if result['success']]
+    failed_datasets = [name for name, result in results.items() if not result['success']]
     
     print(f"📊 Results Summary:")
     print(f"   Total time: {total_time:.1f} seconds ({total_time/60:.1f} minutes)")
-    print(f"   Successful datasets: {len(successful_datasets)}/{len(datasets)}")
-    
-    for dataset_name, result in results.items():
-        status = "✅" if result['success'] else "❌"
-        print(f"   {status} {dataset_name}: {result['time']:.1f}s")
+    print(f"   Successful datasets: {len(successful_datasets)}/{len(available_datasets)}")
+    print(f"   Available datasets: {len(available_datasets)}/{len(datasets)}")
     
     if successful_datasets:
-        print(f"\n🎉 Successfully analyzed: {', '.join(successful_datasets)}")
-        print(f"📁 Results saved in: outputs/[dataset_name]/")
-        print(f"🌐 Start dashboard to view results!")
-    else:
-        print(f"\n⚠️  No datasets were successfully analyzed")
-        print(f"Please check the data files and error messages above")
+        print(f"\n🎉 Successfully analyzed:")
+        for dataset_name in successful_datasets:
+            result = results[dataset_name]
+            print(f"   ✅ {dataset_name}: {result['time']:.1f}s")
+        
+        print(f"\n📁 Results saved in:")
+        for dataset_name in successful_datasets:
+            print(f"   📂 outputs/{dataset_name}/")
+        
+        print(f"\n🌐 Start the web dashboard to view detailed results!")
+        print(f"   Command: python run_project.py --dashboard")
+    
+    if failed_datasets:
+        print(f"\n⚠️  Failed datasets:")
+        for dataset_name in failed_datasets:
+            result = results[dataset_name]
+            print(f"   ❌ {dataset_name}: Check error messages above")
+    
+    if not successful_datasets:
+        print(f"\n❌ No datasets were successfully analyzed")
+        print(f"Please check:")
+        print(f"   📁 Data file paths and formats")
+        print(f"   🐍 Python dependencies (run system check)")
+        print(f"   📋 Error messages above for specific issues")
     
     return results
+
 
 if __name__ == "__main__":
     run_individual_analysis()

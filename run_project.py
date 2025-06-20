@@ -134,98 +134,47 @@ def create_directories():
         print(f"✅ {directory}/")
 
 
-def run_main_pipeline():
-    """Execute the main ML pipeline"""
-    print_section("RUNNING MAIN ML PIPELINE")
-    
-    try:
-        print("🚀 Starting main.py pipeline...")
-        start_time = time.time()
-        
-        # Import and run main pipeline
-        from main import main as run_main
-        result = run_main()
-        
-        end_time = time.time()
-        execution_time = end_time - start_time
-        
-        if result and result.get('overall_success', False):
-            print(f"✅ Main pipeline completed successfully!")
-            print(f"⏱️  Total execution time: {execution_time:.1f} seconds ({execution_time/60:.1f} minutes)")
-            return result
-        else:
-            print(f"⚠️  Main pipeline completed with some limitations")
-            print(f"⏱️  Total execution time: {execution_time:.1f} seconds")
-            return result or {'overall_success': False}
-            
-    except Exception as e:
-        print(f"❌ Error running main pipeline: {e}")
-        print("Please check the error above and ensure all dependencies are installed")
-        return {'overall_success': False, 'error': str(e)}
-
-
 def check_output_files():
     """Check what output files were generated"""
     print_section("CHECKING OUTPUT FILES")
     
-    file_categories = {
-        "📊 Data Files": [
-            "outputs/X_train.csv",
-            "outputs/X_test.csv", 
-            "outputs/y_train.csv",
-            "outputs/y_test.csv",
-            "outputs/unified_features.csv",
-            "outputs/unified_labels.csv"
-        ],
-        "🤖 Model Files": [
-            "outputs/model_xgb.pkl",
-            "outputs/model_rf.pkl",
-            "outputs/model_svr.pkl",
-            "outputs/models/model_xgboost_classifier.pkl",
-            "outputs/models/model_random_forest_classifier.pkl",
-            "outputs/models/model_svm_classifier.pkl"
-        ],
-        "📈 Prediction Files": [
-            "outputs/predictions_xgb.csv",
-            "outputs/predictions_rf.csv",
-            "outputs/predictions_svr.csv",
-            "outputs/predictions_xgboost_classification.csv",
-            "outputs/predictions_random_forest_classification.csv",
-            "outputs/predictions_svm_classification.csv"
-        ],
-        "📊 Chart Files": [
-            "outputs/charts/predicted_vs_actual_all_models.png",
-            "outputs/charts/model_comparison_metrics.png",
-            "outputs/charts/residuals_analysis.png",
-            "outputs/charts/feature_importance_xgb.png",
-            "outputs/charts/feature_importance_rf.png",
-            "outputs/charts/confusion_matrices_classification.png",
-            "outputs/charts/classification_metrics_comparison.png"
-        ],
-        "📋 Table Files": [
-            "outputs/model_evaluation_results.csv",
-            "outputs/tables/classification_performance.csv",
-            "outputs/tables/cross_year_summary.csv"
-        ]
-    }
+    datasets = ['seattle_2015', 'seattle_2016', 'nyc_2021']
     
     total_files = 0
     existing_files = 0
     
-    for category, files in file_categories.items():
-        print(f"\n{category}:")
-        category_existing = 0
+    for dataset in datasets:
+        print(f"\n📊 {dataset.upper()} Results:")
         
-        for file_path in files:
+        dataset_files = [
+            f"outputs/{dataset}/X_train.csv",
+            f"outputs/{dataset}/X_test.csv", 
+            f"outputs/{dataset}/y_train.csv",
+            f"outputs/{dataset}/y_test.csv",
+            f"outputs/{dataset}/model_xgb.pkl",
+            f"outputs/{dataset}/model_rf.pkl",
+            f"outputs/{dataset}/model_svr.pkl",
+            f"outputs/{dataset}/predictions_xgb.csv",
+            f"outputs/{dataset}/predictions_rf.csv",
+            f"outputs/{dataset}/predictions_svr.csv",
+            f"outputs/{dataset}/charts/predicted_vs_actual_all_models.png",
+            f"outputs/{dataset}/charts/model_comparison_metrics.png",
+            f"outputs/{dataset}/charts/feature_importance_xgb.png",
+            f"outputs/{dataset}/charts/feature_importance_rf.png",
+            f"outputs/{dataset}/model_evaluation_results.csv"
+        ]
+        
+        dataset_existing = 0
+        for file_path in dataset_files:
             total_files += 1
             if os.path.exists(file_path):
                 print(f"  ✅ {os.path.basename(file_path)}")
                 existing_files += 1
-                category_existing += 1
+                dataset_existing += 1
             else:
                 print(f"  ❌ {os.path.basename(file_path)}")
         
-        print(f"  📊 {category_existing}/{len(files)} files in this category")
+        print(f"  📊 {dataset_existing}/{len(dataset_files)} files for {dataset}")
     
     print(f"\n📊 OVERALL: {existing_files}/{total_files} files generated ({existing_files/total_files*100:.1f}%)")
     
@@ -236,29 +185,36 @@ def validate_model_performance():
     """Validate model performance from results"""
     print_section("VALIDATING MODEL PERFORMANCE")
     
-    try:
+    datasets = ['seattle_2015', 'seattle_2016', 'nyc_2021']
+    
+    for dataset in datasets:
+        print(f"\n📊 {dataset.upper()} Results:")
+        
         # Check regression results
-        regression_file = "outputs/model_evaluation_results.csv"
+        regression_file = f"outputs/{dataset}/model_evaluation_results.csv"
         if os.path.exists(regression_file):
-            df_reg = pd.read_csv(regression_file)
-            print("✅ Regression Results Found:")
-            for _, row in df_reg.iterrows():
-                print(f"  🤖 {row['Model']}: R² = {row['R2']:.4f}, RMSE = {row['RMSE']:.2f}")
+            try:
+                df_reg = pd.read_csv(regression_file)
+                print("✅ Regression Results Found:")
+                for _, row in df_reg.iterrows():
+                    print(f"  🤖 {row['Model']}: R² = {row['R2']:.4f}, RMSE = {row['RMSE']:.2f}")
+            except Exception as e:
+                print(f"⚠️  Error reading regression results: {e}")
         else:
             print("⚠️  No regression results found")
         
         # Check classification results  
-        classification_file = "outputs/tables/classification_performance.csv"
+        classification_file = f"outputs/{dataset}/tables/classification_performance.csv"
         if os.path.exists(classification_file):
-            df_class = pd.read_csv(classification_file)
-            print("\n✅ Classification Results Found:")
-            for _, row in df_class.iterrows():
-                print(f"  🎯 {row['Model']}: Accuracy = {row['Accuracy']:.4f}, F1 = {row['F1-Score']:.4f}")
+            try:
+                df_class = pd.read_csv(classification_file)
+                print("✅ Classification Results Found:")
+                for _, row in df_class.iterrows():
+                    print(f"  🎯 {row['Model']}: Accuracy = {row['Accuracy']:.4f}")
+            except Exception as e:
+                print(f"⚠️  Error reading classification results: {e}")
         else:
-            print("\n⚠️  No classification results found")
-            
-    except Exception as e:
-        print(f"❌ Error validating performance: {e}")
+            print("⚠️  No classification results found")
 
 
 def start_web_dashboard():
@@ -319,14 +275,12 @@ def generate_project_summary(pipeline_result):
         print("   🎉 Excellent! All core components completed successfully")
         print("   📊 Your model evaluation metrics are ready for reporting")
         print("   📈 Check the dashboard for detailed visualizations")
-        print("   📋 Professional tables are available in outputs/tables/")
+        print("   📋 Professional tables are available in outputs/[dataset]/tables/")
         
-        if existing_files >= total_files * 0.9:
-            print("   🏆 Outstanding! Nearly all expected files generated")
-        elif existing_files >= total_files * 0.7:
-            print("   ✅ Good! Most expected files generated")
+        if existing_files >= total_files * 0.7:
+            print("   🏆 Good! Most expected files generated")
         else:
-            print("   ⚠️  Some optional files missing, but core results available")
+            print("   ⚠️  Some files missing, but core results available")
     else:
         print("   ⚠️  Pipeline had some issues - check error messages above")
         print("   🔧 Try running individual components to identify issues")
@@ -335,46 +289,8 @@ def generate_project_summary(pipeline_result):
     return summary
 
 
-def interactive_menu():
-    while True:
-        print_banner("BUILDING ENERGY PREDICTION - INTERACTIVE MENU")
-        print("Choose an option:")
-        print("1. 🔍 System Check (dependencies, data files)")
-        print("2. 🚀 Run Complete Pipeline (Combined Datasets)")
-        print("3. 🎯 Run Individual Dataset Analysis (NEW - FIX BUGS)")  # 新增
-        print("4. 📊 Check Output Files") 
-        print("5. 🌐 Start Web Dashboard")
-        print("6. 📋 View Project Summary")
-        print("7. ❌ Exit")
-        
-        try:
-            choice = input("\nEnter choice (1-7): ").strip()
-            
-            if choice == "1":
-                system_check()
-            elif choice == "2":
-                run_complete_pipeline()
-            elif choice == "3":  # 新增选项
-                run_individual_analysis_option()
-            elif choice == "4":
-                check_output_files()
-            elif choice == "5":
-                start_web_dashboard()
-                break
-            elif choice == "6":
-                view_project_summary()
-            elif choice == "7":
-                print("👋 Goodbye!")
-                break
-            else:
-                print("❌ Invalid choice. Please select 1-7.")
-                
-        except KeyboardInterrupt:
-            print("\n👋 Goodbye!")
-            break
-
 def run_individual_analysis_option():
-    """运行独立数据集分析选项"""
+    """运行独立数据集分析选项 - FIXED VERSION"""
     print_banner("INDIVIDUAL DATASET ANALYSIS")
     print("🎯 This mode analyzes each dataset independently to avoid compatibility issues")
     print("✅ Fixes cross-year negative R² problems") 
@@ -382,17 +298,37 @@ def run_individual_analysis_option():
     
     confirm = input("\n🚀 Start individual analysis? (y/n): ").lower().strip()
     if confirm == 'y':
-        from main_individual import run_individual_analysis
-        results = run_individual_analysis()
+        try:
+            from main_individual import run_individual_analysis
+            
+            print("🔄 Starting individual dataset analysis...")
+            results = run_individual_analysis()
+
+            successful = sum(1 for r in results.values() if r['success'])
+            print(f"\n📊 Analysis completed: {successful}/{len(results)} datasets successful")
+
+            for dataset_name, result in results.items():
+                status = "✅" if result['success'] else "❌"
+                print(f"   {status} {dataset_name}: {result['time']:.1f}s")
+            
+            if successful > 0:
+                print(f"\n🎉 Successfully analyzed {successful} datasets!")
+                print(f"📁 Results saved in: outputs/[dataset_name]/")
+                
+                dashboard = input("\n🌐 Start dashboard to view results? (y/n): ").lower().strip()
+                if dashboard == 'y':
+                    start_web_dashboard()
+            else:
+                print(f"\n⚠️  No datasets were successfully analyzed")
+                print(f"Please check the data files and error messages above")
         
-        # 显示结果摘要
-        successful = sum(1 for r in results.values() if r['success'])
-        print(f"\n📊 Analysis completed: {successful}/{len(results)} datasets successful")
-        
-        if successful > 0:
-            dashboard = input("\n🌐 Start dashboard to view results? (y/n): ").lower().strip()
-            if dashboard == 'y':
-                start_web_dashboard()
+        except ImportError as e:
+            print(f"❌ Import error: {e}")
+            print("Please ensure main_individual.py exists and is properly formatted")
+        except Exception as e:
+            print(f"❌ Error running individual analysis: {e}")
+            import traceback
+            traceback.print_exc()
     else:
         print("❌ Analysis cancelled")
 
@@ -413,39 +349,9 @@ def system_check():
     print(f"   📁 Data Files: {'✅' if data_ok else '❌'}")
     
     if python_ok and packages_ok and data_ok:
-        print("🎉 System is ready! You can run the complete pipeline.")
+        print("🎉 System is ready! You can run the individual analysis.")
     else:
         print("⚠️  Please resolve the issues above before running the pipeline.")
-
-
-def run_complete_pipeline():
-    """Run the complete ML pipeline"""
-    print_banner("COMPLETE PIPELINE EXECUTION")
-    
-    # System check first
-    print("Performing quick system check...")
-    if not (check_python_version() and check_required_packages() and check_data_files()):
-        print("❌ System check failed. Please resolve issues first.")
-        return
-    
-    create_directories()
-    
-    # Run main pipeline
-    pipeline_result = run_main_pipeline()
-    
-    # Validate results
-    validate_model_performance()
-    
-    # Generate summary
-    summary = generate_project_summary(pipeline_result)
-    
-    # Ask if user wants to start dashboard
-    try:
-        start_dashboard = input("\n🌐 Start web dashboard now? (y/n): ").lower().strip()
-        if start_dashboard == 'y':
-            start_web_dashboard()
-    except KeyboardInterrupt:
-        print("\n👋 Pipeline completed. You can start the dashboard later with option 4.")
 
 
 def view_project_summary():
@@ -466,23 +372,58 @@ def view_project_summary():
         except Exception as e:
             print(f"❌ Error reading summary: {e}")
     else:
-        print("❌ No project summary found. Run the pipeline first.")
+        print("❌ No project summary found. Run the analysis first.")
+
+
+def interactive_menu():
+    while True:
+        print_banner("BUILDING ENERGY PREDICTION - INDIVIDUAL ANALYSIS")
+        print("Choose an option:")
+        print("1. 🔍 System Check (dependencies, data files)")
+        print("2. 🎯 Run Individual Dataset Analysis (RECOMMENDED)")
+        print("3. 📊 Check Output Files") 
+        print("4. 🌐 Start Web Dashboard")
+        print("5. 📋 View Project Summary")
+        print("6. ❌ Exit")
+        
+        try:
+            choice = input("\nEnter choice (1-6): ").strip()
+            
+            if choice == "1":
+                system_check()
+            elif choice == "2":
+                run_individual_analysis_option()
+            elif choice == "3":
+                check_output_files()
+            elif choice == "4":
+                start_web_dashboard()
+                break
+            elif choice == "5":
+                view_project_summary()
+            elif choice == "6":
+                print("👋 Goodbye!")
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-6.")
+                
+        except KeyboardInterrupt:
+            print("\n👋 Goodbye!")
+            break
 
 
 def main():
-    """Main entry point"""
     print_banner("BUILDING ENERGY PREDICTION SYSTEM")
-    print("🏢 Advanced ML Pipeline for Building Energy Consumption Analysis")
-    print("📊 Multi-Model Comparison with Professional Reporting")
-    print("🎯 XGBoost | Random Forest | SVR | Classification | Cross-Year Analysis")
+    print("🏢 Individual Dataset Analysis for Building Energy Consumption")
+    print("📊 XGBoost | Random Forest | SVR | Classification")
+    print("🎯 Reliable Results with Independent Dataset Processing")
     
     # Check if running with arguments
     if len(sys.argv) > 1:
         arg = sys.argv[1].lower()
         
-        if arg in ['--auto', '-a']:
-            print("🤖 Running in automatic mode...")
-            run_complete_pipeline()
+        if arg in ['--individual', '-i']:
+            print("🎯 Running individual analysis mode...")
+            run_individual_analysis_option()
         elif arg in ['--check', '-c']:
             print("🔍 Running system check only...")
             system_check()
@@ -491,11 +432,11 @@ def main():
             start_web_dashboard()
         elif arg in ['--help', '-h']:
             print("\nUsage:")
-            print("  python run_project.py           # Interactive menu")
-            print("  python run_project.py --auto    # Run complete pipeline")
-            print("  python run_project.py --check   # System check only")
-            print("  python run_project.py --dashboard # Start dashboard only")
-            print("  python run_project.py --help    # Show this help")
+            print("  python run_project.py              # Interactive menu")
+            print("  python run_project.py --individual # Run individual analysis")
+            print("  python run_project.py --check      # System check only")
+            print("  python run_project.py --dashboard  # Start dashboard only")
+            print("  python run_project.py --help       # Show this help")
         else:
             print(f"❌ Unknown argument: {arg}")
             print("Use --help for usage information")

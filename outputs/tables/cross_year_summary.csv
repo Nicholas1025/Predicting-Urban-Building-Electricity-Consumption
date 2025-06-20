@@ -1,4 +1,0 @@
-Model,Task,Mean_Performance,Std_Performance,Best_Year,Metric
-Random Forest (Regression),Regression,-11303762.8666,0,2021,R2 Score
-SVR (Regression),Regression,-178840907.7697,0,2021,R2 Score
-XGBoost (Regression),Regression,-1449393280.0,0,2021,R2 Score
