@@ -1,0 +1,6 @@
+,accuracy,accuracy,accuracy,f1_score,f1_score,f1_score,precision,precision,precision,recall,recall,recall
+model_name,Random Forest,SVM,XGBoost,Random Forest,SVM,XGBoost,Random Forest,SVM,XGBoost,Random Forest,SVM,XGBoost
+dataset,,,,,,,,,,,,
+chicago_energy,0.9173,0.8843,0.9457,0.9174,0.884,0.9457,0.9178,0.8839,0.9458,0.9173,0.8843,0.9457
+seattle_2015_present,0.9828,0.922,0.9899,0.9828,0.9223,0.9899,0.9829,0.9227,0.9899,0.9828,0.922,0.9899
+washington_dc,0.9387,0.8466,0.9528,0.9386,0.8469,0.9527,0.9386,0.8473,0.9526,0.9387,0.8466,0.9528

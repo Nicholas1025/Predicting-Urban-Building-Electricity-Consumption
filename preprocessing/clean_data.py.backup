@@ -244,33 +244,45 @@ def find_target_variable_enhanced(df, dataset_type=None):
 
 def apply_fair_outlier_removal(df, dataset_type, target_col):
     """
-    修复后的异常值移除 - 只对目标变量进行异常值移除
+    Apply FAIR outlier removal - adaptive based on dataset characteristics
     """
-    from preprocessing.clean_data import get_fair_city_config
     config = get_fair_city_config(dataset_type)
     low_pct, high_pct = config['outlier_percentiles']
     
-    print(f"{dataset_type}: 应用修复的异常值移除 ({low_pct}%-{high_pct}% 范围)")
+    print(f"{dataset_type}: Applying FAIR outlier removal ({low_pct}%-{high_pct}% range)")
     
     original_shape = df.shape[0]
     
-    # 修复: 只对目标变量进行异常值移除
+    # Focus outlier removal mainly on target variable
     if target_col in df.columns:
         target_data = pd.to_numeric(df[target_col], errors='coerce')
         q_low = target_data.quantile(low_pct / 100)
         q_high = target_data.quantile(high_pct / 100)
         
-        # 只移除目标变量的极端异常值
+        # Remove extreme outliers in target
         target_mask = (target_data >= q_low) & (target_data <= q_high)
         df = df[target_mask]
         
-        print(f"目标变量异常值移除: 保留 {df.shape[0]}/{original_shape} 行")
+        print(f"Target outlier removal: kept {df.shape[0]}/{original_shape} rows")
+    
+    # Light outlier removal for other numeric columns (only extreme cases)
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    for col in numeric_cols:
+        if col != target_col and df[col].notna().sum() > 20:
+            # Very conservative outlier removal for non-target columns
+            q1 = df[col].quantile(0.001)  # Only remove extreme 0.1% outliers
+            q99 = df[col].quantile(0.999)
+            df = df[(df[col] >= q1) & (df[col] <= q99)]
     
     final_shape = df.shape[0]
     removed_count = original_shape - final_shape
     removal_pct = (removed_count / original_shape) * 100
     
-    print(f"总异常值移除: {removed_count} 行 ({removal_pct:.1f}%)")
+    print(f"Total outlier removal: {removed_count} rows ({removal_pct:.1f}%)")
+    
+    # Ensure we don't remove too much data
+    if removal_pct > 80:
+        print(f"⚠️ Warning: Removed {removal_pct:.1f}% of data - this may be too aggressive")
     
     return df
 

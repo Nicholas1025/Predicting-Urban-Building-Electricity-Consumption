@@ -1,0 +1,48 @@
+2025-06-21 18:14:14,837 - BuildingEnergyAnalysis - INFO - ================================================================================
+2025-06-21 18:14:14,837 - BuildingEnergyAnalysis - INFO - BUILDING ENERGY PREDICTION - COMPREHENSIVE LOGGING SESSION
+2025-06-21 18:14:14,838 - BuildingEnergyAnalysis - INFO - ================================================================================
+2025-06-21 18:14:14,838 - BuildingEnergyAnalysis - INFO - BuildingEnergyLogger initialized
+2025-06-21 18:14:14,838 - BuildingEnergyAnalysis - INFO - Session timestamp: 20250621_181414
+2025-06-21 18:14:14,839 - BuildingEnergyAnalysis - INFO - Datasets to process: ['seattle_2015_present', 'chicago_energy', 'washington_dc']
+2025-06-21 18:14:14,839 - BuildingEnergyAnalysis - INFO - Starting complete logging session...
+2025-06-21 18:14:14,839 - BuildingEnergyAnalysis - INFO - Starting comprehensive results collection...
+2025-06-21 18:14:14,840 - BuildingEnergyAnalysis - INFO - Checking and creating missing classification tables...
+2025-06-21 18:14:14,840 - BuildingEnergyAnalysis - INFO - Processing dataset: seattle_2015_present
+2025-06-21 18:14:14,840 - BuildingEnergyAnalysis - INFO - Collecting metadata for seattle_2015_present
+2025-06-21 18:14:15,026 - BuildingEnergyAnalysis - INFO - Metadata collected for seattle_2015_present: 4 files found
+2025-06-21 18:14:15,026 - BuildingEnergyAnalysis - INFO - Collecting regression results for seattle_2015_present
+2025-06-21 18:14:15,028 - BuildingEnergyAnalysis - INFO - Collected 3 regression results for seattle_2015_present
+2025-06-21 18:14:15,028 - BuildingEnergyAnalysis - INFO - Collecting classification results for seattle_2015_present
+2025-06-21 18:14:15,030 - BuildingEnergyAnalysis - INFO - Collected 3 classification results for seattle_2015_present
+2025-06-21 18:14:15,030 - BuildingEnergyAnalysis - INFO - Processing dataset: chicago_energy
+2025-06-21 18:14:15,031 - BuildingEnergyAnalysis - INFO - Collecting metadata for chicago_energy
+2025-06-21 18:14:15,137 - BuildingEnergyAnalysis - INFO - Metadata collected for chicago_energy: 4 files found
+2025-06-21 18:14:15,138 - BuildingEnergyAnalysis - INFO - Collecting regression results for chicago_energy
+2025-06-21 18:14:15,141 - BuildingEnergyAnalysis - INFO - Collected 3 regression results for chicago_energy
+2025-06-21 18:14:15,141 - BuildingEnergyAnalysis - INFO - Collecting classification results for chicago_energy
+2025-06-21 18:14:15,144 - BuildingEnergyAnalysis - INFO - Collected 3 classification results for chicago_energy
+2025-06-21 18:14:15,144 - BuildingEnergyAnalysis - INFO - Processing dataset: washington_dc
+2025-06-21 18:14:15,145 - BuildingEnergyAnalysis - INFO - Collecting metadata for washington_dc
+2025-06-21 18:14:15,477 - BuildingEnergyAnalysis - INFO - Metadata collected for washington_dc: 4 files found
+2025-06-21 18:14:15,478 - BuildingEnergyAnalysis - INFO - Collecting regression results for washington_dc
+2025-06-21 18:14:15,481 - BuildingEnergyAnalysis - INFO - Collected 3 regression results for washington_dc
+2025-06-21 18:14:15,481 - BuildingEnergyAnalysis - INFO - Collecting classification results for washington_dc
+2025-06-21 18:14:15,483 - BuildingEnergyAnalysis - INFO - Collected 3 classification results for washington_dc
+2025-06-21 18:14:15,483 - BuildingEnergyAnalysis - INFO - Collection complete: 9 regression + 9 classification results
+2025-06-21 18:14:15,483 - BuildingEnergyAnalysis - INFO - Creating unified summary tables...
+2025-06-21 18:14:15,499 - BuildingEnergyAnalysis - INFO - Regression summary saved: logs\summary_tables\regression_results_summary_20250621_181414.csv
+2025-06-21 18:14:15,499 - BuildingEnergyAnalysis - INFO - Regression comparison saved: logs\summary_tables\regression_comparison_20250621_181414.csv
+2025-06-21 18:14:15,508 - BuildingEnergyAnalysis - INFO - Classification summary saved: logs\summary_tables\classification_results_summary_20250621_181414.csv
+2025-06-21 18:14:15,508 - BuildingEnergyAnalysis - INFO - Classification comparison saved: logs\summary_tables\classification_comparison_20250621_181414.csv
+2025-06-21 18:14:15,509 - BuildingEnergyAnalysis - INFO - Creating comprehensive analysis report...
+2025-06-21 18:14:15,517 - BuildingEnergyAnalysis - INFO - Comprehensive report saved: logs\comprehensive_analysis_report_20250621_181414.json
+2025-06-21 18:14:15,517 - BuildingEnergyAnalysis - INFO - Generating execution summary...
+2025-06-21 18:14:15,518 - BuildingEnergyAnalysis - INFO - Execution summary saved: logs\execution_summary_20250621_181414.json
+2025-06-21 18:14:15,519 - BuildingEnergyAnalysis - INFO - ================================================================================
+2025-06-21 18:14:15,519 - BuildingEnergyAnalysis - INFO - LOGGING SESSION COMPLETED SUCCESSFULLY
+2025-06-21 18:14:15,519 - BuildingEnergyAnalysis - INFO - ================================================================================
+2025-06-21 18:14:15,519 - BuildingEnergyAnalysis - INFO - Execution time: 0.68 seconds
+2025-06-21 18:14:15,520 - BuildingEnergyAnalysis - INFO - Datasets processed: 3
+2025-06-21 18:14:15,520 - BuildingEnergyAnalysis - INFO - Regression results: 9
+2025-06-21 18:14:15,520 - BuildingEnergyAnalysis - INFO - Classification results: 9
+2025-06-21 18:14:15,520 - BuildingEnergyAnalysis - INFO - Files generated in: logs

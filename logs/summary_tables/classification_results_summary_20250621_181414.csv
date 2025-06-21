@@ -1,0 +1,10 @@
+dataset,model_type,model_name,accuracy,precision,recall,f1_score,timestamp
+seattle_2015_present,classification,XGBoost,0.9899,0.9899,0.9899,0.9899,2025-06-21T18:14:15.030538
+seattle_2015_present,classification,Random Forest,0.9828,0.9829,0.9828,0.9828,2025-06-21T18:14:15.030616
+seattle_2015_present,classification,SVM,0.922,0.9227,0.922,0.9223,2025-06-21T18:14:15.030687
+chicago_energy,classification,XGBoost,0.9457,0.9458,0.9457,0.9457,2025-06-21T18:14:15.144018
+chicago_energy,classification,Random Forest,0.9173,0.9178,0.9173,0.9174,2025-06-21T18:14:15.144145
+chicago_energy,classification,SVM,0.8843,0.8839,0.8843,0.884,2025-06-21T18:14:15.144251
+washington_dc,classification,XGBoost,0.9528,0.9526,0.9528,0.9527,2025-06-21T18:14:15.483379
+washington_dc,classification,Random Forest,0.9387,0.9386,0.9387,0.9386,2025-06-21T18:14:15.483457
+washington_dc,classification,SVM,0.8466,0.8473,0.8466,0.8469,2025-06-21T18:14:15.483531

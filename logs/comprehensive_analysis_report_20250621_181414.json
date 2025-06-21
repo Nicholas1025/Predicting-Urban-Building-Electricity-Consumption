@@ -1,0 +1,134 @@
+{
+  "execution_info": {
+    "session_timestamp": "20250621_181414",
+    "datasets_processed": 3,
+    "total_regression_results": 9,
+    "total_classification_results": 9,
+    "analysis_date": "2025-06-21T18:14:15.509302"
+  },
+  "dataset_overview": {
+    "seattle_2015_present": {
+      "files_available": 4,
+      "models_trained": 4,
+      "charts_generated": 10,
+      "has_regression_results": true,
+      "has_classification_results": true,
+      "target_variable": {
+        "train_samples": 21804,
+        "value_range": [
+          3.2,
+          393.4
+        ],
+        "mean": 63.45301779490001,
+        "std": 78.22841589829882
+      }
+    },
+    "chicago_energy": {
+      "files_available": 4,
+      "models_trained": 4,
+      "charts_generated": 10,
+      "has_regression_results": true,
+      "has_classification_results": true,
+      "target_variable": {
+        "train_samples": 17585,
+        "value_range": [
+          462766.1,
+          80642654.1
+        ],
+        "mean": 8228589.524543646,
+        "std": 11531928.852997523
+      }
+    },
+    "washington_dc": {
+      "files_available": 4,
+      "models_trained": 4,
+      "charts_generated": 10,
+      "has_regression_results": true,
+      "has_classification_results": true,
+      "target_variable": {
+        "train_samples": 16718,
+        "value_range": [
+          51259.0,
+          18237082.3
+        ],
+        "mean": 2197735.366891278,
+        "std": 2522692.842279435
+      }
+    }
+  },
+  "best_performers": {
+    "regression": {
+      "seattle_2015_present": {
+        "model": "RF",
+        "r2_score": 0.99777584720572,
+        "rmse": 3.6611015528973536,
+        "mae": 0.8889097413318677
+      },
+      "chicago_energy": {
+        "model": "XGB",
+        "r2_score": 0.9811927164863764,
+        "rmse": 1700769.5380511235,
+        "mae": 562763.9315487832
+      },
+      "washington_dc": {
+        "model": "XGB",
+        "r2_score": 0.9831733548971512,
+        "rmse": 328743.05996359483,
+        "mae": 114620.93025220434
+      }
+    },
+    "classification": {
+      "seattle_2015_present": {
+        "model": "XGBoost",
+        "accuracy": 0.9899,
+        "precision": 0.9899,
+        "recall": 0.9899,
+        "f1_score": 0.9899
+      },
+      "chicago_energy": {
+        "model": "XGBoost",
+        "accuracy": 0.9457,
+        "precision": 0.9458,
+        "recall": 0.9457,
+        "f1_score": 0.9457
+      },
+      "washington_dc": {
+        "model": "XGBoost",
+        "accuracy": 0.9528,
+        "precision": 0.9526,
+        "recall": 0.9528,
+        "f1_score": 0.9527
+      }
+    }
+  },
+  "performance_summary": {
+    "regression": {
+      "avg_r2_by_model": {
+        "RF": 0.9857186576803771,
+        "SVR": 0.2391308636860857,
+        "XGB": 0.9873090396832861
+      },
+      "avg_rmse_by_model": {
+        "RF": 721954.468642878,
+        "SVR": 5277701.346063283,
+        "XGB": 676505.4772764852
+      },
+      "best_overall_r2": 0.99777584720572,
+      "worst_overall_r2": -0.1348029784818265
+    },
+    "classification": {
+      "avg_accuracy_by_model": {
+        "Random Forest": 0.9462666666666667,
+        "SVM": 0.8843,
+        "XGBoost": 0.9628
+      },
+      "avg_f1_by_model": {
+        "Random Forest": 0.9462666666666667,
+        "SVM": 0.8844,
+        "XGBoost": 0.9627666666666667
+      },
+      "best_overall_accuracy": 0.9899,
+      "worst_overall_accuracy": 0.8466
+    }
+  }
+}

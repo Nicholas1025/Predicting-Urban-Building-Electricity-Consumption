@@ -1,0 +1,29 @@
+{
+  "session_info": {
+    "timestamp": "20250621_181414",
+    "execution_date": "2025-06-21T18:14:15.517675",
+    "datasets_requested": [
+      "seattle_2015_present",
+      "chicago_energy",
+      "washington_dc"
+    ],
+    "datasets_processed": [
+      "seattle_2015_present",
+      "chicago_energy",
+      "washington_dc"
+    ]
+  },
+  "results_collected": {
+    "regression_results": 9,
+    "classification_results": 9,
+    "datasets_with_regression": 3,
+    "datasets_with_classification": 3
+  },
+  "files_generated": [
+    "classification_comparison_20250621_181414.csv",
+    "classification_results_summary_20250621_181414.csv",
+    "regression_comparison_20250621_181414.csv",
+    "regression_results_summary_20250621_181414.csv"
+  ],
+  "success_rate": 300.0
+}

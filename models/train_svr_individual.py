@@ -82,55 +82,28 @@ def load_preprocessed_data(dataset_name=None):
         return None
 
 
-def prepare_data_for_svr(X_train, X_test, y_train, y_test, use_subset=True, subset_size=5000):
-    """
-    Prepare data for SVR training with optional subset sampling and scaling
-    
-    Args:
-        X_train, X_test, y_train, y_test: Original training and test data
-        use_subset (bool): Whether to use a subset for training
-        subset_size (int): Size of training subset if use_subset is True
-        
-    Returns:
-        tuple: Prepared data and scaler
-    """
+def prepare_data_for_svr(X_train, X_test, y_train, y_test, dataset_name, use_subset=True, subset_size=5000):
+
     print(f"Preparing data for SVR training...")
-    
-    # Use subset for training if dataset is large (SVR doesn't scale well)
+
     if use_subset and len(X_train) > subset_size:
-        print(f"Using subset of {subset_size} samples for SVR training (computational efficiency)")
+        print(f"Using subset of {subset_size} samples for SVR training")
         subset_indices = np.random.choice(len(X_train), subset_size, replace=False)
         X_train_svr = X_train.iloc[subset_indices].copy()
         y_train_svr = y_train.iloc[subset_indices].copy()
     else:
         X_train_svr = X_train.copy()
         y_train_svr = y_train.copy()
+
+    print("Using pre-scaled data (no additional scaling)")
+    X_train_scaled = X_train_svr
+    X_test_scaled = X_test
+
+    print(f"Feature ranges after preprocessing:")
+    print(f"  X_train mean: {X_train_scaled.mean().mean():.4f}")
+    print(f"  X_train std: {X_train_scaled.std().mean():.4f}")
     
-    # SVR benefits from feature scaling - apply additional scaling if needed
-    scaler = None
-    try:
-        # Try to load existing scaler
-        scaler = joblib.load(f"{get_output_paths(None)['data_dir']}/scaler.pkl")
-        print("Using existing scaler from preprocessing")
-        X_train_scaled = pd.DataFrame(scaler.transform(X_train_svr), 
-                                     columns=X_train_svr.columns, 
-                                     index=X_train_svr.index)
-        X_test_scaled = pd.DataFrame(scaler.transform(X_test), 
-                                    columns=X_test.columns, 
-                                    index=X_test.index)
-    except FileNotFoundError:
-        # Create new scaler if not found
-        print("Creating new scaler for SVR")
-        scaler = StandardScaler()
-        X_train_scaled = pd.DataFrame(scaler.fit_transform(X_train_svr), 
-                                     columns=X_train_svr.columns, 
-                                     index=X_train_svr.index)
-        X_test_scaled = pd.DataFrame(scaler.transform(X_test), 
-                                    columns=X_test.columns, 
-                                    index=X_test.index)
-    
-    print(f"Final training data shape: {X_train_scaled.shape}")
-    return X_train_scaled, X_test_scaled, y_train_svr, y_test, scaler
+    return X_train_scaled, X_test_scaled, y_train_svr, y_test, None
 
 
 def create_baseline_model():
@@ -278,6 +251,88 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, model_name="SVR"):
     }
     
     return metrics
+
+def create_optimized_svr_models():
+    """
+    创建多个优化的SVR模型配置
+    """
+    models = {
+        'SVR_Linear': SVR(
+            kernel='linear',
+            C=1.0,
+            epsilon=0.1,
+            cache_size=1000
+        ),
+        
+        'SVR_RBF_Conservative': SVR(
+            kernel='rbf',
+            C=1.0,  # 更保守的C值
+            gamma='scale',
+            epsilon=0.1,
+            cache_size=1000
+        ),
+        
+        'SVR_RBF_Tuned': SVR(
+            kernel='rbf',
+            C=10.0,  # 中等的C值
+            gamma=0.1,  # 更大的gamma值
+            epsilon=0.01,  # 更小的epsilon
+            cache_size=1000
+        )
+    }
+    
+    return models
+
+def train_multiple_svr_models(X_train, y_train):
+    """
+    训练多个SVR配置并选择最佳的
+    """
+    models = create_optimized_svr_models()
+    results = {}
+    
+    print("Training multiple SVR configurations...")
+    
+    for name, model in models.items():
+        print(f"\nTraining {name}...")
+        start_time = time.time()
+        
+        try:
+            model.fit(X_train, y_train)
+            train_time = time.time() - start_time
+            
+            # 简单的训练集评估
+            train_pred = model.predict(X_train)
+            train_r2 = r2_score(y_train, train_pred)
+            
+            results[name] = {
+                'model': model,
+                'train_r2': train_r2,
+                'train_time': train_time,
+                'success': True
+            }
+            
+            print(f"  ✅ {name}: R² = {train_r2:.4f}, Time = {train_time:.2f}s")
+            
+        except Exception as e:
+            print(f"  ❌ {name} failed: {e}")
+            results[name] = {
+                'model': None,
+                'train_r2': -999,
+                'train_time': 0,
+                'success': False
+            }
+    
+    # 选择最佳模型
+    successful_models = {k: v for k, v in results.items() if v['success']}
+    
+    if successful_models:
+        best_name = max(successful_models.keys(), key=lambda k: successful_models[k]['train_r2'])
+        best_model = successful_models[best_name]['model']
+        print(f"\n🏆 Best SVR configuration: {best_name}")
+        return best_model, results
+    else:
+        print("\n❌ All SVR configurations failed!")
+        return None, results
 
 
 def plot_support_vectors_analysis(model, X_train, save_path, dataset_name=""):
